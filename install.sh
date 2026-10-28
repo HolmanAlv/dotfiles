@@ -75,6 +75,7 @@ if xfconf-query -c xsettings -l >/dev/null 2>&1; then
     xq xfce4-screensaver $s/location "$HOME/.config/theme/walls"
     xq xfce4-screensaver $s/background-color "#000000"
     xq xfce4-screensaver $s/arguments "--location=$HOME/.config/theme/walls --background-color=#000000"
+    systemctl --user try-restart xdg-desktop-portal-gtk  # el portal (diálogos de archivos) solo lee gtk.css al arrancar
     "$R/bin/theme" everforest
 fi
 echo "listo. Login: theme everforest --system"

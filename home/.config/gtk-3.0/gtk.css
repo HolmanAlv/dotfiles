@@ -1,5 +1,8 @@
 /* Todo cuadrado (lo usan GTK3 y, vía @import, GTK4/libadwaita).
    El CSS de usuario tiene prioridad sobre el tema sin importar la especificidad. */
 * { border-radius: 0; }
-/* lo que debe seguir siendo circular para no confundirse con un checkbox */
+/* las casillas siempre cuadradas (Colloid las hace círculos en GTK4); lo de abajo sí es circular */
+check { border-radius: 0; }
 radio, switch, switch slider, scale slider, .circular, avatar { border-radius: 9999px; }
+/* botones de título (_ □ x) cuadrados: Colloid los hace circulares y en GTK4 gana por especificidad */
+window button.titlebutton:not(.suggested-action):not(.destructive-action) { border-radius: 0; }
