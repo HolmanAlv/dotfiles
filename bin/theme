@@ -1,6 +1,7 @@
 #!/bin/sh
 # theme <nombre> [--system] : aplica themes/<nombre>. Con --system también el login (LightDM, pide sudo).
 set -eu
+[ "$(id -u)" != 0 ] || { echo "theme: ejecútalo sin sudo (con --system pide la contraseña él solo)" >&2; exit 1; }
 R=$(dirname "$(dirname "$(readlink -f "$0")")")
 name=${1:-}
 T=$R/themes/$name

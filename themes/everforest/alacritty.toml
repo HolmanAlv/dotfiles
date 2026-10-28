@@ -1,7 +1,7 @@
 # Colors (Everforest Dark Hard)
 
 [colors.primary]
-background = '#272e33'
+background = '#1e2326'  # bg_dim: más oscuro que Thunar (#272e33)
 foreground = '#d3c6aa'
 
 [colors.normal]
@@ -25,7 +25,7 @@ cyan    = '#83c092'
 white   = '#d3c6aa'
 
 [colors.selection]
-background = '#4c3743'
+background = '#495156'  # bg4: gris, no el morado de bg_visual
 text       = '#d3c6aa'
 
 [colors.search.matches]

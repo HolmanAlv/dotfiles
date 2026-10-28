@@ -21,9 +21,10 @@ theme everforest --system   # además el login (LightDM, pide sudo)
   - con un `sed` de una línea: btop, VS Code y Zed (no se enlazan porque reescriben su propia config);
   - además Plank y Spicetify.
 - fzf, bat, micro, cava, htop, git y ls usan los 16 colores ANSI de la terminal: siguen al tema sin fichero propio.
-- Tema GTK: [Colloid](https://github.com/vinceliuice/Colloid-gtk-theme) con `--tweaks normal` (botones `_ □ x`, no círculos tipo Mac); `install.sh` pone a 0 todo radio no circular en el CSS compilado.
+- Tema GTK: [Colloid](https://github.com/vinceliuice/Colloid-gtk-theme) con `--tweaks normal` (botones `_ □ x` en círculo gris, no los puntos de colores tipo Mac); `install.sh` pone a 0 todo radio no circular en el CSS compilado.
 - Iconos: Zafiro (variante de Archcraft) arreglado, sin enlaces rotos y heredando solo temas que existen. Va en `extras/icons/Zafiro.tar.zst`.
-- Bordes de ventana: tema xfwm4 `Square`, generado desde el Default de xfwm4 con `extras/make-xfwm4-square.py`: barra oscura, esquinas rectas y contorno oscuro de 1px. Los colores salen del tema GTK.
+- Bordes de ventana: tema xfwm4 `Square`, generado con `extras/make-xfwm4-square.py`: barra oscura, esquinas rectas y contorno oscuro de 1px del Default de xfwm4 (colores del tema GTK), con los botones redondos del Everforest-GTK-Theme de Fausto (PNG sin fondo, valen para cualquier tema).
+- Alacritty: fondo un tono más oscuro que el de las ventanas (bg_dim / hard) y selección gris.
 - Apps Qt: `QT_QPA_PLATFORMTHEME=gtk3` en `.xprofile`, sin Kvantum. Hace falta volver a iniciar sesión.
 
 ## Añadir un tema

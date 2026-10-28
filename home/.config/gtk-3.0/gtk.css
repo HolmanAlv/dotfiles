@@ -4,5 +4,5 @@
 /* las casillas siempre cuadradas (Colloid las hace círculos en GTK4); lo de abajo sí es circular */
 check { border-radius: 0; }
 radio, switch, switch slider, scale slider, .circular, avatar { border-radius: 9999px; }
-/* botones de título (_ □ x) cuadrados: Colloid los hace circulares y en GTK4 gana por especificidad */
-window button.titlebutton:not(.suggested-action):not(.destructive-action) { border-radius: 0; }
+/* botones de título (_ □ x) redondos como los de xfwm4 (Square); el * de arriba los cuadraría en GTK3 */
+window button.titlebutton:not(.suggested-action):not(.destructive-action) { border-radius: 9999px; }

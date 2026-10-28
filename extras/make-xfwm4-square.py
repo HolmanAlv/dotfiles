@@ -4,6 +4,7 @@
 Default ya toma sus colores del tema GTK (XPM simbólicos): barra oscura, botones x □ _.
 Aquí solo se cuadran las esquinas y se añade un contorno de 1px oscuro (*_shadow_2).
 Los PNG de sombreado de Default se descartan: look plano.
+Los botones (salvo el menú, que muestra el icono de la app) son los círculos de Fausto (Everforest-GTK-Theme).
 
 uso: make-xfwm4-square.py [origen] [destino]
 """
@@ -14,6 +15,8 @@ SRC = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else "/usr/share/themes/Defa
 DST = pathlib.Path(sys.argv[2] if len(sys.argv) > 2 else
                    pathlib.Path(__file__).resolve().parent.parent / "home/.local/share/themes/Square/xfwm4")
 OUT = "%"  # carácter libre para el color del contorno
+FAUSTO = pathlib.Path.home() / ".themes/Everforest-Dark/xfwm4"  # botones redondos (los PNG quedan en el repo)
+BUTTONS = {"close", "hide", "maximize", "maximize-toggled", "shade", "shade-toggled", "stick", "stick-toggled"}
 
 
 def edges(name):
@@ -56,9 +59,34 @@ def square(xpm, name):
     return "\n".join(lines[:start] + [head] + colors + body) + "\n"
 
 
+def circle(png):
+    """Botón redondo del Everforest-Dark de Fausto: PNG sin su fondo encima de un XPM con el color de la barra."""
+    im = Image.open(png).convert("RGBA").crop((0, 2, 36, 31))  # 34px -> los 29 de la barra de Default
+    bg = im.getpixel((1, 15))
+    px = im.load()
+    for x in range(im.width):
+        for y in range(im.height):
+            if sum(abs(a - b) for a, b in zip(px[x, y][:3], bg[:3])) < 6:
+                px[x, y] = (0, 0, 0, 0)
+    im.save(DST / png.name)
+    w, h = im.size
+    state = "inactive" if "inactive" in png.stem else "active"
+    fill = "inactive_color_2" if state == "inactive" else "active_mid_2"  # lo mismo que title-*.xpm
+    rows = ["%" * w] + ["." * w] * (h - 1)
+    (DST / f"{png.stem}.xpm").write_text("\n".join(
+        ["/* XPM */", f"static char * {png.stem.replace('-', '_')}_xpm[] = {{", f'"{w} {h} 2 1",',
+         f'".      c #C0C0FF s {fill}",', f'"%      c #000000 s {state}_shadow_2",']
+        + [f'"{r}",' for r in rows[:-1]] + [f'"{rows[-1]}"}};']) + "\n")
+
+
 DST.mkdir(parents=True, exist_ok=True)
 for f in sorted(SRC.glob("*.xpm")):
     (DST / f.name).write_text(square(f.read_text(), f.stem))
-themerc = (SRC / "themerc").read_text()
+if FAUSTO.is_dir():  # sin él se quedan los botones _ □ x de Default
+    from PIL import Image
+    for png in FAUSTO.glob("*.png"):
+        if png.stem.rsplit("-", 1)[0] in BUTTONS:
+            circle(png)
+themerc = (SRC / "themerc").read_text().replace("button_spacing=2", "button_spacing=0")
 (DST / "themerc").write_text("# Generado por extras/make-xfwm4-square.py desde el Default de xfwm4\n" + themerc)
 print(f"{len(list(DST.glob('*.xpm')))} xpm -> {DST}")
