@@ -2,7 +2,7 @@
 # install.sh [--no-pkgs] : deja el escritorio como en este repo. Se puede repetir sin romper nada.
 set -eu
 R=$(dirname "$(readlink -f "$0")")
-C=$HOME/.cache/xfce_everforest_dotfiles
+C=$HOME/.cache/dotfiles
 XFWM=Square       # bordes de ventana: home/.local/share/themes/Square/xfwm4 (colores del tema GTK)
 
 # 1. Paquetes

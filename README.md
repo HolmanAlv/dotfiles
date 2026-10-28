@@ -1,4 +1,4 @@
-# xfce_everforest_dotfiles
+# dotfiles
 
 Arch + XFCE (X11) con Everforest Dark Hard, bordes cuadrados y temas intercambiables.
 

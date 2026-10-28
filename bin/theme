@@ -66,15 +66,20 @@ fi
 touch "$HOME/.config/alacritty/alacritty.toml"
 
 if [ "${2:-}" = --system ]; then
-    ext=${WALL##*.}
+    LOGIN_WALL=${LOGIN_WALL:-$WALL}
+    ext=${LOGIN_WALL##*.}
     # El greeter corre como usuario lightdm y no puede leer ~. Iconos: Adwaita (ya en el sistema;
     # copiar los Colloid serían ~54MB para 5 iconos simbólicos casi iguales)
     sudo cp -rLT "$HOME/.themes/$GTK" "/usr/share/themes/$GTK"
     sudo cp -rLT "$HOME/.local/share/icons/$CURSOR" "/usr/share/icons/$CURSOR"
-    sudo install -Dm644 "$WALL" "/usr/share/backgrounds/dotfiles-login.$ext"
+    sudo install -Dm644 "$LOGIN_WALL" "/usr/share/backgrounds/dotfiles-login.$ext"
+    # Avatar simbólico de Adwaita con el blanco del tema (el greeter lo pinta con el acento)
+    sed "s/#2e3436/$FG/" /usr/share/icons/Adwaita/symbolic/status/avatar-default-symbolic.svg |
+        sudo tee /usr/share/backgrounds/dotfiles-avatar.svg >/dev/null
     g=/etc/lightdm/lightdm-gtk-greeter.conf
     for kv in "theme-name=$GTK" "icon-theme-name=Adwaita" "cursor-theme-name=$CURSOR" \
-              "background=/usr/share/backgrounds/dotfiles-login.$ext" "font-name=Roboto 11"; do
+              "background=/usr/share/backgrounds/dotfiles-login.$ext" "font-name=Roboto 11" \
+              "default-user-image=/usr/share/backgrounds/dotfiles-avatar.svg"; do
         k=${kv%%=*} v=${kv#*=}
         if sudo grep -qE "^#?$k *=" "$g"; then
             sudo sed -i -E "s|^#?$k *=.*|$k = $v|" "$g"
