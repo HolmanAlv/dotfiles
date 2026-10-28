@@ -10,7 +10,12 @@ if [ -z "$name" ] || [ ! -f "$T/theme.env" ]; then
     exit 1
 fi
 . "$T/theme.env"
-WALL=$(ls "$T"/walls/* | head -n1)
+# WALLS (theme.env): un fondo de walls/ por escritorio, en orden; si hay más escritorios se repiten
+WALLS=${WALLS:-$(ls "$T/walls" | head -n1)}
+WALL=$T/walls/${WALLS%% *}
+for w in $WALLS; do
+    [ -f "$T/walls/$w" ] || { echo "theme: no existe walls/$w" >&2; exit 1; }
+done
 # Validar antes de tocar nada: un tema a medias es peor que no cambiar
 for d in "$HOME/.themes/$GTK" "$HOME/.local/share/icons/$ICONS" "$HOME/.local/share/icons/$CURSOR"; do
     [ -d "$d" ] || { echo "theme: falta $d (ejecuta install.sh)" >&2; exit 1; }
@@ -38,9 +43,11 @@ for f in gtk gtk-dark; do
         "$HOME/.themes/$GTK/gtk-4.0/$f.css" "$HOME/.config/gtk-3.0/gtk.css" > "$HOME/.config/gtk-4.0/$f.css"
 done
 
-# Fondo en todos los monitores y escritorios
+# Fondos en todos los monitores: el escritorio N usa la N-ésima de WALLS
+n=$(echo $WALLS | wc -w)
 xfconf-query -c xfce4-desktop -l | grep '/last-image$' | while read -r p; do
-    xfconf-query -c xfce4-desktop -p "$p" -s "$WALL"
+    ws=${p##*/workspace}; ws=${ws%%/*}
+    xfconf-query -c xfce4-desktop -p "$p" -s "$T/walls/$(echo $WALLS | cut -d' ' -f$((ws % n + 1)))"
 done
 
 # Plank: un nombre distinto por tema para que dconf dispare el cambio

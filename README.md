@@ -2,6 +2,12 @@
 
 Arch + XFCE (X11) con Everforest Dark Hard, bordes cuadrados y temas intercambiables.
 
+![Escritorio](screenshots/desktop.png)
+
+![Alacritty con neofetch, btop y bat](screenshots/terminals.png)
+
+![Rofi sobre Thunar](screenshots/rofi.png)
+
 ## Uso
 
 ```sh
@@ -34,7 +40,7 @@ theme everforest --system   # además el login (LightDM, pide sudo)
 2. Editar en esa carpeta:
    - `theme.env` (nombres de GTK, iconos, cursor, btop, VS Code, Zed y Spicetify);
    - `alacritty.toml`, `rofi.rasi`, `p10k.zsh`, `plank/dock.theme` y `legcord.css` (colores);
-   - el fondo, en `walls/`.
+   - los fondos, en `walls/` (`WALLS` en `theme.env`: uno por escritorio; `LOGIN_WALL` para el login).
 3. Si Colloid tiene ese esquema (nord, dracula, catppuccin), compilarlo como en `install.sh`.
 
 `theme` valida que existan el GTK, los iconos y el cursor antes de tocar nada.
