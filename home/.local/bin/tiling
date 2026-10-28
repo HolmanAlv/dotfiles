@@ -2,12 +2,16 @@
 # tiling            : switch del mosaico en el escritorio actual (Super+T). Encendido: espiral áurea, sin barras.
 # tiling focus h|j|k|l : foco a la ventana de la izquierda, abajo, arriba o derecha (Super+Alt+H/J/K/L).
 # tiling swap       : la ventana activa pasa a ser la principal (Super+Alt+Enter).
+# tiling resize left|right|up|down : mueve el borde de la ventana activa; las vecinas ceden (Super+Alt+flechas).
+#                     Fuera del mosaico, "up" maximiza como el atajo de xfwm4 al que sustituye.
+#                     Con el ratón: Alt + arrastrar con el botón derecho (xfwm4); las vecinas se ajustan al soltar.
 # tiling daemon     : coloca las ventanas (lo lanza el autostart); los demás comandos le escriben por un FIFO.
 import os, subprocess, sys, time
 
 FIFO = os.path.join(os.environ.get('XDG_RUNTIME_DIR', '/tmp'), 'tiling.fifo')
 GAP = 2       # px entre ventanas, hace de borde: xfwm4 no sabe dibujar el borde sin la barra
 PHI = 0.618   # cada ventana se queda con esta parte del hueco que queda; la siguiente, con el resto
+STEP = 40     # px por pulsación al redimensionar con el teclado
 
 
 def send(cmd):
@@ -44,7 +48,12 @@ disp = Gdk.Display.get_default()
 on = set()     # escritorios con mosaico
 order = {}     # escritorio -> xids en orden de la espiral (el primero es la principal)
 bare = set()   # ventanas a las que hemos quitado la barra (las CSD como Brave ya venían sin ella)
+ratios = {}    # escritorio -> proporción de cada corte de la espiral (PHI hasta que se redimensiona)
+splits = {}    # escritorio -> cortes de la última colocación, para saber qué borde mueve cada ventana
+base = {}      # xid -> (ventana, geometría tras colocarla): lo que difiera lo ha cambiado el ratón
 queued = False
+quiet = 0.0    # hasta cuándo los cambios de geometría son nuestros
+check_id = None
 
 
 def tileable(w, ws):
@@ -90,21 +99,35 @@ def fit(pending, tries=[0]):
     return bool(pending)
 
 
-def spiral(n, x, y, w, h):
-    # derecha, abajo, izquierda, arriba: cada ventana corta PHI del hueco y deja el resto a las siguientes
-    rects = []
+def spiral(n, x, y, w, h, rs):
+    # derecha, abajo, izquierda, arriba: cada ventana corta rs[i] del hueco y deja el resto a las siguientes.
+    # Cada corte: (i, vertical, posición de la línea, tramo que ocupa, tamaño del hueco, +1 si la ventana va antes)
+    rects, cuts = [], []
     for i in range(n - 1):
         if i % 2 == 0:
-            a = int(w * PHI)
-            rects.append((x, y, a, h) if i % 4 == 0 else (x + w - a, y, a, h))
-            x += a if i % 4 == 0 else 0
+            a = int(w * rs[i])
+            first = i % 4 == 0
+            rects.append((x, y, a, h) if first else (x + w - a, y, a, h))
+            cuts.append((i, True, x + a if first else x + w - a, y, y + h, w, 1 if first else -1))
+            x += a if first else 0
             w -= a
         else:
-            a = int(h * PHI)
-            rects.append((x, y, w, a) if i % 4 == 1 else (x, y + h - a, w, a))
-            y += a if i % 4 == 1 else 0
+            a = int(h * rs[i])
+            first = i % 4 == 1
+            rects.append((x, y, w, a) if first else (x, y + h - a, w, a))
+            cuts.append((i, False, y + a if first else y + h - a, x, x + w, h, 1 if first else -1))
+            y += a if first else 0
             h -= a
-    return rects + [(x, y, w, h)]
+    return rects + [(x, y, w, h)], cuts
+
+
+def shift(n, vertical, edge, span, delta):
+    # mover delta px el corte que pasa por ese borde de la ventana; False si es el borde de la pantalla
+    for i, v, pos, lo, hi, size, sign in splits.get(n, []):
+        if v == vertical and abs(pos - edge) <= GAP and lo < span[1] and span[0] < hi:
+            ratios[n][i] = min(0.9, max(0.1, ratios[n][i] + sign * delta / size))
+            return True
+    return False
 
 
 def retile():
@@ -126,9 +149,49 @@ def retile():
         disp.flush()
         queue()
         return False
-    for xid, (x, y, w, h) in zip(lst, spiral(len(lst), a.x - g, a.y - g, a.width + GAP, a.height + GAP)):
+    rs = ratios.setdefault(n, [])
+    rs += [PHI] * (len(lst) - 1 - len(rs))
+    rects, splits[n] = spiral(len(lst), a.x - g, a.y - g, a.width + GAP, a.height + GAP, rs)
+    global quiet
+    quiet = time.monotonic() + 0.4
+    for xid, (x, y, w, h) in zip(lst, rects):
         place(wins[xid], (x + g, y + g, w - GAP, h - GAP))
     disp.flush()
+    GLib.timeout_add(450, capture, list(wins.values()))
+    return False
+
+
+def capture(wins):
+    base.clear()
+    base.update((w.get_xid(), (w, tuple(w.get_geometry()))) for w in wins)
+    return False
+
+
+def changed(w):
+    # el ratón redimensiona a trozos: esperar a que pare y entonces ajustar las vecinas
+    global check_id
+    if time.monotonic() < quiet or w.get_xid() not in base:
+        return
+    if check_id:
+        GLib.source_remove(check_id)
+    check_id = GLib.timeout_add(250, check)
+
+
+def check():
+    global check_id
+    check_id = None
+    n = scr.get_active_workspace().get_number()
+    if n not in on:
+        return False
+    for w, (bx, by, bw, bh) in list(base.values()):
+        x, y, ww, hh = w.get_geometry()
+        if (ww, hh) == (bw, bh):
+            continue  # solo movida: vuelve a su hueco
+        for vertical, old, new, span in ((True, bx, x, (by, by + bh)), (True, bx + bw, x + ww, (by, by + bh)),
+                                         (False, by, y, (bx, bx + bw)), (False, by + bh, y + hh, (bx, bx + bw))):
+            if new != old:
+                shift(n, vertical, old, span, new - old)
+    queue()
     return False
 
 
@@ -194,6 +257,21 @@ def swap():
         queue()
 
 
+def resize(d):
+    a = scr.get_active_window()
+    n = scr.get_active_workspace().get_number()
+    if n in on and a and a.get_xid() in base:
+        x, y, w, h = base[a.get_xid()][1]
+        vertical = d in ('left', 'right')
+        delta = STEP if d in ('right', 'down') else -STEP
+        # primero el borde derecho/inferior; si es el de la pantalla, el otro
+        edges, span = ((x + w, x), (y, y + h)) if vertical else ((y + h, y), (x, x + w))
+        if any(shift(n, vertical, e, span, delta) for e in edges):
+            queue()
+    elif d == 'up' and a:  # como maximize_window_key de xfwm4; dentro del mosaico, devuelve una maximizada
+        a.unmaximize() if a.is_maximized() else a.maximize()
+
+
 def moved(w):
     ws = w.get_workspace()
     if ws is None or ws.get_number() not in on:
@@ -204,6 +282,7 @@ def moved(w):
 def watch(w):
     w.connect('state-changed', queue)
     w.connect('workspace-changed', moved)
+    w.connect('geometry-changed', changed)
 
 
 def command(fd, _):
@@ -215,6 +294,8 @@ def command(fd, _):
             focus(arg[0])
         elif cmd == 'swap':
             swap()
+        elif cmd == 'resize' and arg and arg[0] in ('left', 'right', 'up', 'down'):
+            resize(arg[0])
     return True
 
 
