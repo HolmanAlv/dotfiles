@@ -2,13 +2,17 @@
 # tiling            : switch del mosaico en el escritorio actual (Super+T). Encendido: espiral áurea, sin barras.
 # tiling focus h|j|k|l : foco a la ventana de la izquierda, abajo, arriba o derecha (Super+Alt+H/J/K/L).
 # tiling swap       : la ventana activa pasa a ser la principal (Super+Alt+Enter).
+# tiling move h|j|k|l : intercambia la activa con la vecina en esa dirección (Super+Alt+Shift+H/J/K/L).
+#                     Con el ratón: Alt + arrastrar una ventana y soltarla encima de otra.
 # tiling resize left|right|up|down : mueve el borde de la ventana activa; las vecinas ceden (Super+Alt+flechas).
 #                     Fuera del mosaico, "up" maximiza como el atajo de xfwm4 al que sustituye.
 #                     Con el ratón: Alt + arrastrar con el botón derecho (xfwm4); las vecinas se ajustan al soltar.
 # tiling daemon     : coloca las ventanas (lo lanza el autostart); los demás comandos le escriben por un FIFO.
-import os, subprocess, sys, time
+import json, os, subprocess, sys, time
 
-FIFO = os.path.join(os.environ.get('XDG_RUNTIME_DIR', '/tmp'), 'tiling.fifo')
+RUN = os.environ.get('XDG_RUNTIME_DIR', '/tmp')  # se vacía al cerrar sesión: el mosaico arranca apagado
+FIFO = os.path.join(RUN, 'tiling.fifo')
+STATE = os.path.join(RUN, 'tiling.json')        # para no perder escritorios ni barras si se reinicia el daemon
 GAP = 2       # px entre ventanas, hace de borde: xfwm4 no sabe dibujar el borde sin la barra
 PHI = 0.618   # cada ventana se queda con esta parte del hueco que queda; la siguiente, con el resto
 STEP = 40     # px por pulsación al redimensionar con el teclado
@@ -54,6 +58,15 @@ base = {}      # xid -> (ventana, geometría tras colocarla): lo que difiera lo 
 queued = False
 quiet = 0.0    # hasta cuándo los cambios de geometría son nuestros
 check_id = None
+try:
+    saved = json.load(open(STATE))
+    on, bare = set(saved['on']), set(saved['bare'])
+except (OSError, ValueError, KeyError):
+    pass
+
+
+def save():
+    json.dump({'on': sorted(on), 'bare': sorted(bare)}, open(STATE, 'w'))
 
 
 def tileable(w, ws):
@@ -67,11 +80,13 @@ def decorate(xid, yes):
     if yes and xid in bare:
         bare.discard(xid)
         gw.set_decorations(Gdk.WMDecoration.ALL)
+        save()
     elif not yes and xid not in bare:
         ok, deco = gw.get_decorations()
         if not ok or deco:
             bare.add(xid)
             gw.set_decorations(0)
+            save()
             return True
     return False
 
@@ -186,7 +201,13 @@ def check():
     for w, (bx, by, bw, bh) in list(base.values()):
         x, y, ww, hh = w.get_geometry()
         if (ww, hh) == (bw, bh):
-            continue  # solo movida: vuelve a su hueco
+            # solo movida: si se suelta encima de otra, cambian de sitio; si no, vuelve a su hueco
+            cx, cy = x + ww / 2, y + hh / 2
+            for o, (ox, oy, ow, oh) in list(base.values()):
+                if o != w and ox <= cx < ox + ow and oy <= cy < oy + oh:
+                    exchange(w, o)
+                    break
+            continue
         for vertical, old, new, span in ((True, bx, x, (by, by + bh)), (True, bx + bw, x + ww, (by, by + bh)),
                                          (False, by, y, (bx, bx + bw)), (False, by + bh, y + hh, (bx, bx + bw))):
             if new != old:
@@ -219,21 +240,20 @@ def toggle():
             decorate(w.get_xid(), True)
         # xfwm4 pone la barra encima de la ventana (fuera de pantalla si estaba arriba): volver al mismo hueco
         GLib.timeout_add(120, fit, [(w, tuple(r), list(r)) for w, r in back])
+        save()
         notify('desactivado')
     else:
         on.add(n)
         for w in mine:  # las maximizadas entran al encender; luego, maximizar una la saca del mosaico
             if w.get_window_type() == Wnck.WindowType.NORMAL and w.is_maximized():
                 w.unmaximize()
+        save()
         notify('activado')
         queue()
 
 
-def focus(d):
-    a = scr.get_active_window()
+def neighbor(a, d):
     ws = scr.get_active_workspace()
-    if not a:
-        return
     ax, ay, aw, ah = a.get_geometry()
     best, score = None, None
     for w in scr.get_windows():
@@ -244,8 +264,30 @@ def focus(d):
         main, side = {'h': (-dx, dy), 'l': (dx, dy), 'k': (-dy, dx), 'j': (dy, dx)}[d]
         if main > 0 and (score is None or main + 2 * abs(side) < score):
             best, score = w, main + 2 * abs(side)
-    if best:
-        best.activate(GdkX11.x11_get_server_time(Gdk.get_default_root_window()))
+    return best
+
+
+def focus(d):
+    a = scr.get_active_window()
+    b = a and neighbor(a, d)
+    if b:
+        b.activate(GdkX11.x11_get_server_time(Gdk.get_default_root_window()))
+
+
+def exchange(a, b):
+    # las dos ventanas cambian de hueco en la espiral
+    lst = order.get(scr.get_active_workspace().get_number(), [])
+    if a.get_xid() in lst and b.get_xid() in lst:
+        i, j = lst.index(a.get_xid()), lst.index(b.get_xid())
+        lst[i], lst[j] = lst[j], lst[i]
+        queue()
+
+
+def move(d):
+    a = scr.get_active_window()
+    b = a and neighbor(a, d)
+    if b:
+        exchange(a, b)
 
 
 def swap():
@@ -294,6 +336,8 @@ def command(fd, _):
             focus(arg[0])
         elif cmd == 'swap':
             swap()
+        elif cmd == 'move' and arg and arg[0] in 'hjkl':
+            move(arg[0])
         elif cmd == 'resize' and arg and arg[0] in ('left', 'right', 'up', 'down'):
             resize(arg[0])
     return True
@@ -309,6 +353,6 @@ scr.force_update()
 for w in scr.get_windows():
     watch(w)
 scr.connect('window-opened', lambda s, w: (watch(w), queue()))
-scr.connect('window-closed', lambda s, w: (bare.discard(w.get_xid()), queue()))
+scr.connect('window-closed', lambda s, w: (bare.discard(w.get_xid()), save(), queue()))
 scr.connect('active-workspace-changed', queue)
 Gtk.main()

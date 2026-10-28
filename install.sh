@@ -79,7 +79,10 @@ if xfconf-query -c xsettings -l >/dev/null 2>&1; then
     xq xfce4-notifyd /theme Square
     xq xfce4-keyboard-shortcuts '/commands/custom/<Super>space' 'rofi -show drun'
     xq xfce4-keyboard-shortcuts '/commands/custom/<Super>t' "$HOME/.local/bin/tiling"
-    for k in h j k l; do xq xfce4-keyboard-shortcuts "/commands/custom/<Alt><Super>$k" "$HOME/.local/bin/tiling focus $k"; done
+    for k in h j k l; do
+        xq xfce4-keyboard-shortcuts "/commands/custom/<Alt><Super>$k" "$HOME/.local/bin/tiling focus $k"
+        xq xfce4-keyboard-shortcuts "/commands/custom/<Shift><Alt><Super>$k" "$HOME/.local/bin/tiling move $k"
+    done
     xq xfce4-keyboard-shortcuts '/commands/custom/<Alt><Super>Return' "$HOME/.local/bin/tiling swap"
     # Super+Alt+flechas redimensionan en mosaico; Arriba maximizaba en xfwm4 y ahora lo hace tiling fuera del mosaico
     xfconf-query -c xfce4-keyboard-shortcuts -p '/xfwm4/custom/<Alt><Super>Up' -r 2>/dev/null || true
