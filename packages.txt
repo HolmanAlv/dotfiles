@@ -1,0 +1,14 @@
+# Paquetes del tema. Los que llevan "aur:" van por yay.
+git
+curl
+sassc
+gnome-themes-extra
+lightdm-gtk-greeter
+plank
+rofi
+alacritty
+btop
+ttf-iosevka-nerd
+ttf-roboto
+aur:gtk-engine-murrine
+aur:spicetify-cli

@@ -1,0 +1,2 @@
+configuration { icon-theme: "Colloid-Green-Everforest-Dark"; }
+* { bg0: #272e33; bg1: #2e383c; fg0: #d3c6aa; accent-color: #a7c080; urgent-color: #e67e80; }

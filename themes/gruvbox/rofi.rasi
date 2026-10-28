@@ -1,0 +1,2 @@
+configuration { icon-theme: "Colloid-Gruvbox-Dark"; }
+* { bg0: #282828; bg1: #3c3836; fg0: #ebdbb2; accent-color: #d79921; urgent-color: #fb4934; }

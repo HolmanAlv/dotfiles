@@ -1,0 +1,7 @@
+configuration {
+    show-icons:   true;
+    display-drun: "";
+}
+@theme "~/.local/share/rofi/themes/square.rasi"
+/* colores + icon-theme del tema activo (bin/theme) */
+@import "~/.config/theme/rofi.rasi"

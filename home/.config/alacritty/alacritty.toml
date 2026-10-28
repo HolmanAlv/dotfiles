@@ -1,0 +1,21 @@
+# Colores: los pone el tema activo (bin/theme)
+[general]
+import = ["~/.config/theme/alacritty.toml"]
+
+[window]
+padding = { x = 10, y = 10 }
+opacity = 0.8
+
+[font]
+#normal = { family = "JetBrains Mono", style = "Regular" }
+#normal = { family = "BigBlueTerm437 Nerd Font", style = "Regular" }
+normal = { family = "Iosevka Nerd Font", style = "Regular" }
+#normal = { family = "Terminess Nerd Font", style = "Regular" }
+#normal = { family = "Monocraft", style = "Regular" }
+
+size = 14
+
+[[keyboard.bindings]]
+key = "Return"
+mods = "Shift"
+chars = "\u001B\r"

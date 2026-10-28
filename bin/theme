@@ -1,0 +1,84 @@
+#!/bin/sh
+# theme <nombre> [--system] : aplica themes/<nombre>. Con --system también el login (LightDM, pide sudo).
+set -eu
+R=$(dirname "$(dirname "$(readlink -f "$0")")")
+name=${1:-}
+T=$R/themes/$name
+if [ -z "$name" ] || [ ! -f "$T/theme.env" ]; then
+    echo "uso: theme <$(ls "$R/themes" | paste -sd'|')> [--system]" >&2
+    exit 1
+fi
+. "$T/theme.env"
+WALL=$(ls "$T"/walls/* | head -n1)
+# Validar antes de tocar nada: un tema a medias es peor que no cambiar
+for d in "$HOME/.themes/$GTK" "$HOME/.local/share/icons/$ICONS" "$HOME/.local/share/icons/$CURSOR"; do
+    [ -d "$d" ] || { echo "theme: falta $d (ejecuta install.sh)" >&2; exit 1; }
+done
+
+# Las configs enlazadas importan desde aquí (alacritty, rofi, p10k, legcord)
+ln -sfn "$T" "$HOME/.config/theme"
+
+# GTK, iconos y cursor: las apps GTK3, el panel y xfwm4 cambian en vivo
+xfconf-query -c xsettings -p /Net/ThemeName -s "$GTK"
+xfconf-query -c xsettings -p /Net/IconThemeName -s "$ICONS"
+xfconf-query -c xsettings -p /Gtk/CursorThemeName -s "$CURSOR"
+# Portal/libadwaita/Electron/navegadores leen gsettings
+gsettings set org.gnome.desktop.interface gtk-theme "$GTK"
+gsettings set org.gnome.desktop.interface icon-theme "$ICONS"
+gsettings set org.gnome.desktop.interface cursor-theme "$CURSOR"
+gsettings set org.gnome.desktop.interface color-scheme "prefer-$MODE"
+mkdir -p "$HOME/.icons/default" "$HOME/.config/gtk-4.0"
+printf '[Icon Theme]\nInherits=%s\n' "$CURSOR" > "$HOME/.icons/default/index.theme"
+# GTK4 no lee el tema por nombre: se importa su CSS + las reglas cuadradas (apps GTK4 se reinician para verlo)
+ln -sfn "$HOME/.themes/$GTK/gtk-4.0/assets" "$HOME/.config/gtk-4.0/assets"
+for f in gtk gtk-dark; do
+    rm -f "$HOME/.config/gtk-4.0/$f.css"
+    printf '@import url("file://%s");\n@import url("file://%s");\n' \
+        "$HOME/.themes/$GTK/gtk-4.0/$f.css" "$HOME/.config/gtk-3.0/gtk.css" > "$HOME/.config/gtk-4.0/$f.css"
+done
+
+# Fondo en todos los monitores y escritorios
+xfconf-query -c xfce4-desktop -l | grep '/last-image$' | while read -r p; do
+    xfconf-query -c xfce4-desktop -p "$p" -s "$WALL"
+done
+
+# Plank: un nombre distinto por tema para que dconf dispare el cambio
+mkdir -p "$HOME/.local/share/plank/themes"
+ln -sfn "$T/plank" "$HOME/.local/share/plank/themes/$name"
+dconf write /net/launchpad/plank/docks/dock1/theme "'$name'"
+
+# Apps que reescriben su propia config: solo se cambia una línea
+f=$HOME/.config/btop/btop.conf
+[ -f "$f" ] && sed -i "s|^color_theme = .*|color_theme = \"/usr/share/btop/themes/$BTOP.theme\"|" "$f"
+f=$HOME/.config/Code/User/settings.json
+[ -f "$f" ] && sed -i "s|\"workbench.colorTheme\": *\"[^\"]*\"|\"workbench.colorTheme\": \"$VSCODE\"|" "$f"
+f=$HOME/.config/zed/settings.json
+[ -f "$f" ] && sed -i "/\"theme\": {/,/}/ s|\"dark\": *\"[^\"]*\"|\"dark\": \"$ZED\"|" "$f"
+if command -v spicetify >/dev/null; then
+    spicetify config current_theme text color_scheme "$SPICETIFY" >/dev/null &&
+        spicetify apply -q >/dev/null || echo "theme: spicetify apply falló (¿falta 'spicetify backup apply'?)" >&2
+fi
+
+# Alacritty recarga al cambiar su config
+touch "$HOME/.config/alacritty/alacritty.toml"
+
+if [ "${2:-}" = --system ]; then
+    ext=${WALL##*.}
+    # El greeter corre como usuario lightdm y no puede leer ~. Iconos: Adwaita (ya en el sistema;
+    # copiar los Colloid serían ~54MB para 5 iconos simbólicos casi iguales)
+    sudo cp -rLT "$HOME/.themes/$GTK" "/usr/share/themes/$GTK"
+    sudo cp -rLT "$HOME/.local/share/icons/$CURSOR" "/usr/share/icons/$CURSOR"
+    sudo install -Dm644 "$WALL" "/usr/share/backgrounds/dotfiles-login.$ext"
+    g=/etc/lightdm/lightdm-gtk-greeter.conf
+    for kv in "theme-name=$GTK" "icon-theme-name=Adwaita" "cursor-theme-name=$CURSOR" \
+              "background=/usr/share/backgrounds/dotfiles-login.$ext" "font-name=Roboto 11"; do
+        k=${kv%%=*} v=${kv#*=}
+        if sudo grep -qE "^#?$k *=" "$g"; then
+            sudo sed -i -E "s|^#?$k *=.*|$k = $v|" "$g"
+        else
+            sudo sed -i "/^\[greeter\]/a $k = $v" "$g"
+        fi
+    done
+    sudo sed -i -E 's/^greeter-session=.*/greeter-session=lightdm-gtk-greeter/' /etc/lightdm/lightdm.conf
+fi
+echo "tema: $name"

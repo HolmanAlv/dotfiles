@@ -1,0 +1,2 @@
+# Apps Qt: usar la integración GTK de Qt para tomar el tema GTK activo (sin Kvantum)
+export QT_QPA_PLATFORMTHEME=gtk3

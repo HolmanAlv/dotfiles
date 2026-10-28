@@ -1,0 +1,9 @@
+# Basado en Metabox (xfwm4-themes, GPL): cuadrado, contorno marcado, colores del tema GTK
+full_width_title=true
+button_spacing=0
+button_offset=1
+button_layout=O|HMC
+title_vertical_offset_active=0
+title_vertical_offset_inactive=0
+# texto oscuro sobre el acento claro (el blanco por defecto no se lee)
+active_text_color=#1e2326
