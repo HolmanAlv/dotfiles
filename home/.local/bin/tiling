@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+# tiling          : switch del mosaico en el escritorio actual (Super+T). Encendido = sin barras de título.
+# tiling daemon   : xpytile con el mosaico apagado en todos los escritorios (lo lanza el autostart).
+import os, subprocess, sys, time
+import Xlib.display, Xlib.X
+from Xlib.protocol.event import ClientMessage
+
+STATE = os.path.join(os.environ.get('XDG_RUNTIME_DIR', '/tmp'), 'tiling')  # un fichero por escritorio encendido
+TOGGLE_TILING, TOGGLE_DECORATION = 1, 4  # números de comando remoto de xpytile
+
+if sys.argv[1:] == ['daemon']:
+    os.makedirs(STATE, exist_ok=True)
+    for f in os.listdir(STATE):
+        os.remove(os.path.join(STATE, f))
+    # xpytile arranca con el mosaico encendido en todo y no tiene opción para cambiarlo
+    src = open('/usr/bin/xpytile').read()
+    on = "tilingInfo['tileWindows'].set_default(True)"
+    assert on in src, 'tiling: xpytile ha cambiado, revisar el parche'
+    sys.argv = ['xpytile']
+    exec(compile(src.replace(on, on.replace('True', 'False')), '/usr/bin/xpytile', 'exec'),
+         {'__name__': '__main__'})
+    sys.exit()
+
+if subprocess.run(['pgrep', '-f', '/tiling daemon$'], capture_output=True).returncode:
+    subprocess.Popen([sys.argv[0], 'daemon'], start_new_session=True,
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    time.sleep(1.5)
+
+d = Xlib.display.Display()
+root = d.screen().root
+desk = root.get_full_property(d.intern_atom('_NET_CURRENT_DESKTOP'), Xlib.X.AnyPropertyType).value[0]
+flag = os.path.join(STATE, str(desk))
+on = not os.path.exists(flag)
+
+
+def send(cmd):
+    ev = ClientMessage(window=root, client_type=d.intern_atom('_XPYTILE_REMOTE'), data=(32, [cmd, 0, 0, 0, 0]))
+    root.send_event(ev, event_mask=Xlib.X.SubstructureNotifyMask)
+    d.flush()
+
+
+# Quitar las barras antes de encender (al teselar xpytile vuelve a decorar las ignoradas)
+# y ponerlas después de apagar
+for cmd in (TOGGLE_DECORATION, TOGGLE_TILING) if on else (TOGGLE_TILING, TOGGLE_DECORATION):
+    send(cmd)
+
+if on:
+    os.makedirs(STATE, exist_ok=True)
+    open(flag, 'w').close()
+else:
+    os.remove(flag)
+subprocess.run(['notify-send', '-t', '1200', '-h', 'string:x-canonical-private-synchronous:tiling',
+                'Mosaico', 'activado' if on else 'desactivado'])

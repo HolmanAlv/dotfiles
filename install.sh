@@ -78,6 +78,7 @@ if xfconf-query -c xsettings -l >/dev/null 2>&1; then
     xq xsettings /Gtk/MonospaceFontName "Iosevka Nerd Font 10"
     xq xfce4-notifyd /theme Square
     xq xfce4-keyboard-shortcuts '/commands/custom/<Super>space' 'rofi -show drun'
+    xq xfce4-keyboard-shortcuts '/commands/custom/<Super>t' "$HOME/.local/bin/tiling"
     s=/screensavers/xfce-personal-slideshow
     xq xfce4-screensaver $s/location "$HOME/.config/theme/walls"
     xq xfce4-screensaver $s/background-color "#000000"

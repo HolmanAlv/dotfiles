@@ -34,6 +34,24 @@ theme everforest --system   # además el login (LightDM, pide sudo)
 - Panel: iconos monocromos (bandeja en modo simbólico y los `-symbolic` de `home/.local/share/icons/hicolor`, más `window > image` en gtk.css para los de bandeja antiguos como Clipman). Para cualquier otra app de bandeja, `extras/icons/tray-symbolic.tar.zst`: ~7000 `-symbolic` sacados de los iconos de panel de Everforest-Dark (`extras/make-tray-symbolic.py`; si una app nueva sale en color, añadir su nombre a `ALIASES`). Las que mandan imagen (Electron) se configuran en la app: Legcord usa `dsc-tray`. CPU, RAM y WiFi con genmon + `panel-stats` (solo builtins de bash, cada 2 s).
 - Apps Qt: `QT_QPA_PLATFORMTHEME=gtk3` en `.xprofile`, sin Kvantum. Hace falta volver a iniciar sesión.
 
+## Mosaico (tiling)
+
+[xpytile](https://github.com/jaywilkas/xpytile) encima de xfwm4, apagado al iniciar. **Super+T** lo enciende o apaga en el escritorio actual; encendido, las ventanas van sin barra de título.
+
+- `home/.local/bin/tiling`: el switch. Con `daemon` (lo lanza `home/.config/autostart/tiling.desktop`) arranca xpytile con el mosaico apagado en todos los escritorios: xpytile no tiene opción para eso y se parchea al cargarlo.
+- `home/.config/xpytilerc`: copia de `/etc/xpytilerc` con los atajos movidos a Super+Alt, porque los de Super solo los usan XFCE y xfwm4.
+
+| Super+Alt + | Acción |
+|---|---|
+| H J K L | foco a la izquierda, abajo, arriba o derecha |
+| B | foco a la ventana anterior |
+| Enter | cambiar la activa con la principal |
+| , . | encoger o agrandar la principal |
+| 1 2 3 4 0 | maestro+pila vertical, vertical, maestro+pila horizontal, horizontal, maximizar |
+| C | siguiente distribución |
+| Tab | rotar ventanas |
+| M N | más o menos ventanas en el mosaico (3 por defecto) |
+
 ## Añadir un tema
 
 1. `cp -r themes/gruvbox themes/<nuevo>`.

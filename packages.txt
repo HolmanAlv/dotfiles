@@ -12,3 +12,4 @@ ttf-iosevka-nerd
 ttf-roboto
 aur:gtk-engine-murrine
 aur:spicetify-cli
+aur:xpytile-git
