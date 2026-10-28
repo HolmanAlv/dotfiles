@@ -15,15 +15,17 @@ fi
 mkdir -p "$C" "$HOME/.local/share/icons"
 if [ ! -d "$HOME/.themes/Colloid-Green-Dark-Everforest" ] || [ ! -d "$HOME/.themes/Colloid-Dark-Gruvbox" ]; then
     [ -d "$C/Colloid-gtk-theme" ] || git clone --depth 1 https://github.com/vinceliuice/Colloid-gtk-theme.git "$C/Colloid-gtk-theme"
-    (cd "$C/Colloid-gtk-theme" && ./install.sh -c dark -t green --tweaks everforest && ./install.sh -c dark --tweaks gruvbox)
+    # normal: botones _ □ x en las barras de título GTK (no los círculos estilo Mac)
+    (cd "$C/Colloid-gtk-theme" && ./install.sh -c dark -t green --tweaks everforest normal && ./install.sh -c dark --tweaks gruvbox normal)
 fi
 # Esquinas cuadradas: todo radio fijo a 0 salvo los circulares (radio, switch, avatar). Idempotente.
 for f in "$HOME"/.themes/Colloid-*/gtk-[34].0/gtk*.css; do
     sed -i -E '/radius: [^;]*(9999px|99px|50%|100%)/! s/([a-z-]*radius): [^;]+;/\1: 0;/g' "$f"
 done
-if [ ! -d "$HOME/.local/share/icons/Colloid-Green-Everforest-Dark" ] || [ ! -d "$HOME/.local/share/icons/Colloid-Gruvbox-Dark" ]; then
-    [ -d "$C/Colloid-icon-theme" ] || git clone --depth 1 https://github.com/vinceliuice/Colloid-icon-theme.git "$C/Colloid-icon-theme"
-    (cd "$C/Colloid-icon-theme" && ./install.sh -s everforest -t green && ./install.sh -s gruvbox)
+# Iconos: Zafiro (variante de Archcraft) arreglado: sin enlaces rotos y heredando solo temas que existen
+if [ ! -d "$HOME/.local/share/icons/Zafiro" ]; then
+    tar -C "$HOME/.local/share/icons" --zstd -xf "$R/extras/icons/Zafiro.tar.zst"
+    gtk-update-icon-cache -f -q "$HOME/.local/share/icons/Zafiro"
 fi
 
 # 3. Cursor Everforest (Gruvbox usa Qogir-Cursor)

@@ -1,11 +1,10 @@
-/* Notificaciones cuadradas; los colores salen del tema GTK activo */
+/* Notificaciones cuadradas; colores del tema GTK activo, borde oscuro */
 #XfceNotifyWindow {
     background-color: @theme_bg_color;
     color: @theme_fg_color;
-    border: 2px solid @theme_selected_bg_color;
+    border: 2px solid shade(@theme_bg_color, 0.6);
     border-radius: 0;
 }
-#XfceNotifyWindow:hover { border-color: @theme_fg_color; }
 #XfceNotifyWindow label#summary { font-weight: bold; color: @theme_selected_bg_color; }
 #XfceNotifyWindow button { border-radius: 0; }
 #XfceNotifyWindow progressbar trough,

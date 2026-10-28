@@ -54,7 +54,9 @@ f=$HOME/.config/Code/User/settings.json
 [ -f "$f" ] && sed -i "s|\"workbench.colorTheme\": *\"[^\"]*\"|\"workbench.colorTheme\": \"$VSCODE\"|" "$f"
 f=$HOME/.config/zed/settings.json
 [ -f "$f" ] && sed -i "/\"theme\": {/,/}/ s|\"dark\": *\"[^\"]*\"|\"dark\": \"$ZED\"|" "$f"
-if command -v spicetify >/dev/null; then
+# Spicetify reinicia Spotify: solo si el esquema cambia
+if command -v spicetify >/dev/null &&
+    ! grep -qE "^color_scheme +=[ ]*$SPICETIFY\$" "$(spicetify -c)"; then
     spicetify config current_theme text color_scheme "$SPICETIFY" >/dev/null &&
         spicetify apply -q >/dev/null || echo "theme: spicetify apply falló (¿falta 'spicetify backup apply'?)" >&2
 fi
