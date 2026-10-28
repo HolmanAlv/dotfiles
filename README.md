@@ -36,21 +36,19 @@ theme everforest --system   # además el login (LightDM, pide sudo)
 
 ## Mosaico (tiling)
 
-[xpytile](https://github.com/jaywilkas/xpytile) encima de xfwm4, apagado al iniciar. **Super+T** lo enciende o apaga en el escritorio actual; encendido, las ventanas van sin barra de título.
+`home/.local/bin/tiling`: mosaico propio sobre xfwm4 (Python + Wnck, sin dependencias nuevas). Apagado al iniciar; **Super+T** lo enciende o apaga en el escritorio actual.
 
-- `home/.local/bin/tiling`: el switch. Con `daemon` (lo lanza `home/.config/autostart/tiling.desktop`) arranca xpytile con el mosaico apagado en todos los escritorios: xpytile no tiene opción para eso y se parchea al cargarlo.
-- `home/.config/xpytilerc`: copia de `/etc/xpytilerc` con los atajos movidos a Super+Alt, porque los de Super solo los usan XFCE y xfwm4.
+- Espiral áurea: cada ventana nueva se queda con el 61,8 % del hueco libre, girando derecha → abajo → izquierda → arriba. Sin límite de ventanas.
+- Encendido, las ventanas van sin barra de título y separadas por 2px (`GAP`): xfwm4 no sabe dibujar el borde sin la barra.
+- Fuera del mosaico: diálogos, ventanas fijadas en todos los escritorios, pantalla completa y las que maximizas. Al encender se desmaximizan todas una vez.
+- `tiling daemon` (lo lanza `home/.config/autostart/tiling.desktop`) coloca las ventanas; los atajos le mandan órdenes por un FIFO en `$XDG_RUNTIME_DIR`. Los atajos son de XFCE, así que funcionan con Bloq Num.
+- Solo usa el monitor principal.
 
-| Super+Alt + | Acción |
+| Atajo | Acción |
 |---|---|
-| H J K L | foco a la izquierda, abajo, arriba o derecha |
-| B | foco a la ventana anterior |
-| Enter | cambiar la activa con la principal |
-| , . | encoger o agrandar la principal |
-| 1 2 3 4 0 | maestro+pila vertical, vertical, maestro+pila horizontal, horizontal, maximizar |
-| C | siguiente distribución |
-| Tab | rotar ventanas |
-| M N | más o menos ventanas en el mosaico (3 por defecto) |
+| Super+T | encender o apagar el mosaico en este escritorio |
+| Super+Alt+H / J / K / L | foco a la izquierda, abajo, arriba o derecha |
+| Super+Alt+Enter | la ventana activa pasa a ser la principal |
 
 ## Añadir un tema
 

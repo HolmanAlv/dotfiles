@@ -1,53 +1,233 @@
 #!/usr/bin/env python3
-# tiling          : switch del mosaico en el escritorio actual (Super+T). Encendido = sin barras de título.
-# tiling daemon   : xpytile con el mosaico apagado en todos los escritorios (lo lanza el autostart).
+# tiling            : switch del mosaico en el escritorio actual (Super+T). Encendido: espiral áurea, sin barras.
+# tiling focus h|j|k|l : foco a la ventana de la izquierda, abajo, arriba o derecha (Super+Alt+H/J/K/L).
+# tiling swap       : la ventana activa pasa a ser la principal (Super+Alt+Enter).
+# tiling daemon     : coloca las ventanas (lo lanza el autostart); los demás comandos le escriben por un FIFO.
 import os, subprocess, sys, time
-import Xlib.display, Xlib.X
-from Xlib.protocol.event import ClientMessage
 
-STATE = os.path.join(os.environ.get('XDG_RUNTIME_DIR', '/tmp'), 'tiling')  # un fichero por escritorio encendido
-TOGGLE_TILING, TOGGLE_DECORATION = 1, 4  # números de comando remoto de xpytile
-
-if sys.argv[1:] == ['daemon']:
-    os.makedirs(STATE, exist_ok=True)
-    for f in os.listdir(STATE):
-        os.remove(os.path.join(STATE, f))
-    # xpytile arranca con el mosaico encendido en todo y no tiene opción para cambiarlo
-    src = open('/usr/bin/xpytile').read()
-    on = "tilingInfo['tileWindows'].set_default(True)"
-    assert on in src, 'tiling: xpytile ha cambiado, revisar el parche'
-    sys.argv = ['xpytile']
-    exec(compile(src.replace(on, on.replace('True', 'False')), '/usr/bin/xpytile', 'exec'),
-         {'__name__': '__main__'})
-    sys.exit()
-
-if subprocess.run(['pgrep', '-f', '/tiling daemon$'], capture_output=True).returncode:
-    subprocess.Popen([sys.argv[0], 'daemon'], start_new_session=True,
-                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    time.sleep(1.5)
-
-d = Xlib.display.Display()
-root = d.screen().root
-desk = root.get_full_property(d.intern_atom('_NET_CURRENT_DESKTOP'), Xlib.X.AnyPropertyType).value[0]
-flag = os.path.join(STATE, str(desk))
-on = not os.path.exists(flag)
+FIFO = os.path.join(os.environ.get('XDG_RUNTIME_DIR', '/tmp'), 'tiling.fifo')
+GAP = 2       # px entre ventanas, hace de borde: xfwm4 no sabe dibujar el borde sin la barra
+PHI = 0.618   # cada ventana se queda con esta parte del hueco que queda; la siguiente, con el resto
 
 
 def send(cmd):
-    ev = ClientMessage(window=root, client_type=d.intern_atom('_XPYTILE_REMOTE'), data=(32, [cmd, 0, 0, 0, 0]))
-    root.send_event(ev, event_mask=Xlib.X.SubstructureNotifyMask)
-    d.flush()
+    fd = os.open(FIFO, os.O_WRONLY | os.O_NONBLOCK)  # falla si no hay daemon leyendo
+    os.write(fd, (cmd + '\n').encode())
+    os.close(fd)
 
 
-# Quitar las barras antes de encender (al teselar xpytile vuelve a decorar las ignoradas)
-# y ponerlas después de apagar
-for cmd in (TOGGLE_DECORATION, TOGGLE_TILING) if on else (TOGGLE_TILING, TOGGLE_DECORATION):
-    send(cmd)
+if sys.argv[1:] != ['daemon']:
+    cmd = ' '.join(sys.argv[1:]) or 'toggle'
+    for i in range(30):
+        try:
+            send(cmd)
+            sys.exit()
+        except OSError:
+            if i == 0:
+                subprocess.Popen([sys.argv[0], 'daemon'], start_new_session=True,
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(0.1)
+    sys.exit('tiling: el daemon no arranca')
 
-if on:
-    os.makedirs(STATE, exist_ok=True)
-    open(flag, 'w').close()
-else:
-    os.remove(flag)
-subprocess.run(['notify-send', '-t', '1200', '-h', 'string:x-canonical-private-synchronous:tiling',
-                'Mosaico', 'activado' if on else 'desactivado'])
+try:
+    send('')
+    sys.exit()  # ya hay otro daemon
+except OSError:
+    pass
+
+import gi
+gi.require_version('Wnck', '3.0'); gi.require_version('Gtk', '3.0'); gi.require_version('Gdk', '3.0'); gi.require_version('GdkX11', '3.0')
+from gi.repository import Gdk, GdkX11, GLib, Gtk, Wnck
+
+scr = Wnck.Screen.get_default()
+disp = Gdk.Display.get_default()
+on = set()     # escritorios con mosaico
+order = {}     # escritorio -> xids en orden de la espiral (el primero es la principal)
+bare = set()   # ventanas a las que hemos quitado la barra (las CSD como Brave ya venían sin ella)
+queued = False
+
+
+def tileable(w, ws):
+    return (w.get_window_type() == Wnck.WindowType.NORMAL and w.get_workspace() == ws
+            and not (w.is_skip_tasklist() or w.is_minimized() or w.is_pinned()
+                     or w.is_fullscreen() or w.is_maximized()))
+
+
+def decorate(xid, yes):
+    gw = GdkX11.X11Window.foreign_new_for_display(disp, xid)
+    if yes and xid in bare:
+        bare.discard(xid)
+        gw.set_decorations(Gdk.WMDecoration.ALL)
+    elif not yes and xid not in bare:
+        ok, deco = gw.get_decorations()
+        if not ok or deco:
+            bare.add(xid)
+            gw.set_decorations(0)
+            return True
+    return False
+
+
+def place(w, rect):
+    M = Wnck.WindowMoveResizeMask
+    w.set_geometry(Wnck.WindowGravity.NORTHWEST, M.X | M.Y | M.WIDTH | M.HEIGHT, *rect)
+
+
+def fit(pending, tries=[0]):
+    # con barra, xfwm4 no deja el marco donde se pide (lo corre lo que mide la barra y el borde):
+    # pedir, medir y corregir la diferencia hasta que el marco ocupe su hueco
+    tries[0] += 1
+    for w, want, req in pending[:]:
+        frame = tuple(w.get_geometry())
+        if frame == tuple(w.get_client_window_geometry()):
+            continue  # todavía sin barra
+        if frame == want or tries[0] > 6:
+            pending.remove((w, want, req))
+            continue
+        req[:] = [r + a - b for r, a, b in zip(req, want, frame)]
+        place(w, req)
+    if not pending:
+        tries[0] = 0
+    return bool(pending)
+
+
+def spiral(n, x, y, w, h):
+    # derecha, abajo, izquierda, arriba: cada ventana corta PHI del hueco y deja el resto a las siguientes
+    rects = []
+    for i in range(n - 1):
+        if i % 2 == 0:
+            a = int(w * PHI)
+            rects.append((x, y, a, h) if i % 4 == 0 else (x + w - a, y, a, h))
+            x += a if i % 4 == 0 else 0
+            w -= a
+        else:
+            a = int(h * PHI)
+            rects.append((x, y, w, a) if i % 4 == 1 else (x, y + h - a, w, a))
+            y += a if i % 4 == 1 else 0
+            h -= a
+    return rects + [(x, y, w, h)]
+
+
+def retile():
+    global queued
+    queued = False
+    ws = scr.get_active_workspace()
+    n = ws.get_number()
+    if n not in on:
+        return False
+    wins = {w.get_xid(): w for w in scr.get_windows() if tileable(w, ws)}
+    lst = order.setdefault(n, [])
+    lst[:] = [x for x in lst if x in wins] + [x for x in wins if x not in lst]
+    # ponytail: solo el monitor principal; con varios, una espiral por monitor
+    mon = disp.get_primary_monitor() or disp.get_monitor(0)
+    a = mon.get_workarea()
+    g = GAP // 2
+    stripped = [decorate(xid, False) for xid in lst]
+    if any(stripped):  # colocar cuando xfwm4 ya haya quitado la barra
+        disp.flush()
+        queue()
+        return False
+    for xid, (x, y, w, h) in zip(lst, spiral(len(lst), a.x - g, a.y - g, a.width + GAP, a.height + GAP)):
+        place(wins[xid], (x + g, y + g, w - GAP, h - GAP))
+    disp.flush()
+    return False
+
+
+def queue(*_):
+    # agrupa ráfagas de eventos; xfwm4 recoloca al quitar la barra, de ahí el retraso
+    global queued
+    if not queued:
+        queued = True
+        GLib.timeout_add(80, retile)
+
+
+def notify(msg):
+    subprocess.Popen(['notify-send', '-t', '1200', '-h', 'string:x-canonical-private-synchronous:tiling',
+                      'Mosaico', msg])
+
+
+def toggle():
+    ws = scr.get_active_workspace()
+    n = ws.get_number()
+    mine = [w for w in scr.get_windows() if w.get_workspace() == ws]
+    if n in on:
+        on.discard(n)
+        back = [(w, w.get_geometry()) for w in mine if w.get_xid() in bare]
+        for w, _ in back:
+            decorate(w.get_xid(), True)
+        # xfwm4 pone la barra encima de la ventana (fuera de pantalla si estaba arriba): volver al mismo hueco
+        GLib.timeout_add(120, fit, [(w, tuple(r), list(r)) for w, r in back])
+        notify('desactivado')
+    else:
+        on.add(n)
+        for w in mine:  # las maximizadas entran al encender; luego, maximizar una la saca del mosaico
+            if w.get_window_type() == Wnck.WindowType.NORMAL and w.is_maximized():
+                w.unmaximize()
+        notify('activado')
+        queue()
+
+
+def focus(d):
+    a = scr.get_active_window()
+    ws = scr.get_active_workspace()
+    if not a:
+        return
+    ax, ay, aw, ah = a.get_geometry()
+    best, score = None, None
+    for w in scr.get_windows():
+        if w == a or not tileable(w, ws):
+            continue
+        x, y, ww, hh = w.get_geometry()
+        dx, dy = x + ww / 2 - (ax + aw / 2), y + hh / 2 - (ay + ah / 2)
+        main, side = {'h': (-dx, dy), 'l': (dx, dy), 'k': (-dy, dx), 'j': (dy, dx)}[d]
+        if main > 0 and (score is None or main + 2 * abs(side) < score):
+            best, score = w, main + 2 * abs(side)
+    if best:
+        best.activate(GdkX11.x11_get_server_time(Gdk.get_default_root_window()))
+
+
+def swap():
+    a = scr.get_active_window()
+    lst = order.get(scr.get_active_workspace().get_number(), [])
+    if a and a.get_xid() in lst:
+        lst.remove(a.get_xid())
+        lst.insert(0, a.get_xid())
+        queue()
+
+
+def moved(w):
+    ws = w.get_workspace()
+    if ws is None or ws.get_number() not in on:
+        decorate(w.get_xid(), True)
+    queue()
+
+
+def watch(w):
+    w.connect('state-changed', queue)
+    w.connect('workspace-changed', moved)
+
+
+def command(fd, _):
+    for line in os.read(fd, 4096).decode().splitlines():
+        cmd, *arg = line.split() or ['']
+        if cmd == 'toggle':
+            toggle()
+        elif cmd == 'focus' and arg and arg[0] in 'hjkl':
+            focus(arg[0])
+        elif cmd == 'swap':
+            swap()
+    return True
+
+
+if not os.path.exists(FIFO):
+    os.mkfifo(FIFO)
+fd = os.open(FIFO, os.O_RDONLY | os.O_NONBLOCK)
+os.open(FIFO, os.O_WRONLY)  # escritor propio: sin él, el FIFO da EOF continuo cuando no escribe nadie
+GLib.io_add_watch(fd, GLib.IO_IN, command)
+
+scr.force_update()
+for w in scr.get_windows():
+    watch(w)
+scr.connect('window-opened', lambda s, w: (watch(w), queue()))
+scr.connect('window-closed', lambda s, w: (bare.discard(w.get_xid()), queue()))
+scr.connect('active-workspace-changed', queue)
+Gtk.main()

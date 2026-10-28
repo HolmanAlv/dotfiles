@@ -79,6 +79,8 @@ if xfconf-query -c xsettings -l >/dev/null 2>&1; then
     xq xfce4-notifyd /theme Square
     xq xfce4-keyboard-shortcuts '/commands/custom/<Super>space' 'rofi -show drun'
     xq xfce4-keyboard-shortcuts '/commands/custom/<Super>t' "$HOME/.local/bin/tiling"
+    for k in h j k l; do xq xfce4-keyboard-shortcuts "/commands/custom/<Alt><Super>$k" "$HOME/.local/bin/tiling focus $k"; done
+    xq xfce4-keyboard-shortcuts '/commands/custom/<Alt><Super>Return' "$HOME/.local/bin/tiling swap"
     s=/screensavers/xfce-personal-slideshow
     xq xfce4-screensaver $s/location "$HOME/.config/theme/walls"
     xq xfce4-screensaver $s/background-color "#000000"
