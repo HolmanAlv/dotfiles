@@ -8,3 +8,9 @@ radio, switch, switch slider, scale slider, .circular, avatar { border-radius: 9
 window button.titlebutton:not(.suggested-action):not(.destructive-action) { border-radius: 9999px; }
 /* panel translúcido como en el Everforest de Fausto (Colloid lo pone opaco); sigue al tema */
 .xfce4-panel.background { background-color: alpha(@theme_bg_color, 0.6); }
+/* iconos de bandeja antiguos (XEmbed, p. ej. Clipman) monocromos: GtkStatusIcon es una ventana con solo una imagen */
+window > image { -gtk-icon-style: symbolic; }
+/* botón de salir: el título es el glifo de power (󰐥), a tamaño de icono */
+#actions-10 label { font-family: "JetBrainsMono NF"; font-size: 18px; }  /* misma altura visible que los iconos de 16px */
+/* indicador de micrófono grabando del plugin de volumen: monocromo como el resto (lo pinta en rojo) */
+.recording-indicator { color: inherit; }

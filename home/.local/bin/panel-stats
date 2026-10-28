@@ -1,0 +1,42 @@
+#!/bin/bash
+# CPU, RAM y WiFi para el genmon del panel. Solo builtins de bash: ningún proceso extra por tick.
+f=${XDG_RUNTIME_DIR:-/tmp}/panel-stats   # contadores del tick anterior (CPU y bytes de red)
+
+read -r _ a b c idle io d e g _ < /proc/stat
+tot=$((a+b+c+idle+io+d+e+g)) idle=$((idle+io))
+
+while read -r k v _; do
+    case $k in MemTotal:) mt=$v ;; MemAvailable:) ma=$v; break ;; esac
+done < /proc/meminfo
+
+{ read -r; read -r; read -r ifc _ link _; } < /proc/net/wireless
+ifc=${ifc%:} link=${link%.}
+# split por ':' porque con contadores grandes el kernel pega el número al nombre ("wlp2s0:123456789")
+while IFS=: read -r name rest; do
+    [ -n "$ifc" ] && [ "${name// }" = "$ifc" ] && { set -- $rest; rx=$1 tx=$9; break; }
+done < /proc/net/dev
+
+now=${EPOCHREALTIME/[.,]/}
+read -r p_tot p_idle p_rx p_tx p_now 2>/dev/null < "$f"
+echo "$tot $idle ${rx:-0} ${tx:-0} $now" > "$f"
+
+dt=$((tot-p_tot)) us=$((now-p_now))
+cpu=$((dt > 0 ? 100*(dt-(idle-p_idle))/dt : 0))
+down=$((us > 0 && rx >= p_rx ? (rx-p_rx)*1000000/us : 0))
+up=$((us > 0 && tx >= p_tx ? (tx-p_tx)*1000000/us : 0))
+
+# $1 = variable, $2 = valor / 2^20 con un decimal (printf -v: sin subshell)
+dec() { printf -v "$1" '%d.%d' $(($2/1048576)) $(($2%1048576*10/1048576)); }
+rate() { if (($2 >= 1048576)); then dec "$1" "$2"; printf -v "$1" '%sM' "${!1}"; else printf -v "$1" '%dK' $(($2/1024)); fi; }
+dec ram $((mt-ma)); dec tot_ram "$mt"   # kB → GiB
+rate down "$down"; rate up "$up"
+
+I='<span size="xx-large">' E='</span>'   # glifos a altura de icono (16px), números a la del texto
+if [ -n "$ifc" ]; then
+    printf -v net "$I\U000f05a9$E ↓%4s ↑%4s" "$down" "$up"
+    tip="WiFi $ifc · señal $((link*100/70))%"   # ath10k da la calidad sobre 70
+else
+    printf -v net "$I\U000f05aa$E"; tip="WiFi desconectado"
+fi
+printf "<txt>$I\U000f0ee0$E %3d%%  $I\U000f035b$E %s  %s</txt><tool>CPU %d%%\nRAM %s / %s\n%s</tool>\n" \
+    "$cpu" "${ram}G" "$net" "$cpu" "$ram" "${tot_ram} GiB" "$tip"

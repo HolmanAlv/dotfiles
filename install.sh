@@ -44,10 +44,17 @@ find . -type f | while read -r f; do
     ln -s "$src" "$dst"
 done
 mkdir -p "$HOME/.local/bin" && ln -sfn "$R/bin/theme" "$HOME/.local/bin/theme"
+# iconos -symbolic del panel: los hechos a mano (Arch, Spotify, Clipman) y los de bandeja para cualquier app
+# (extras/make-tray-symbolic.py); sin regenerar la caché GTK no los ve
+tar -C "$HOME/.local/share/icons/hicolor" --zstd -xf "$R/extras/icons/tray-symbolic.tar.zst"
+gtk-update-icon-cache -f -t -q "$HOME/.local/share/icons/hicolor"
 if [ -d "$HOME/.config/legcord" ] && [ ! -L "$HOME/.config/legcord/quickCss.css" ]; then
     mv "$HOME/.config/legcord/quickCss.css" "$HOME/.config/legcord/quickCss.css.pre-dotfiles" 2>/dev/null || true
     ln -s "$HOME/.config/theme/legcord.css" "$HOME/.config/legcord/quickCss.css"
 fi
+# Legcord manda su icono de bandeja como imagen (no se puede recolorear): el fijo blanco, sin contador
+L=$HOME/.config/legcord/storage/settings.json
+[ -f "$L" ] && sed -i 's/"tray": *"[^"]*"/"tray": "dsc-tray"/' "$L"
 if command -v spicetify >/dev/null; then
     mkdir -p "$HOME/.config/spicetify/Themes"
     ln -sfn "$R/extras/spicetify/text" "$HOME/.config/spicetify/Themes/text"
@@ -57,16 +64,16 @@ command -v code >/dev/null && code --install-extension jdinhlife.gruvbox >/dev/n
 
 # 5. XFCE: atajos y panel solo en una instalación nueva (no pisa lo que ya hay)
 X=$HOME/.config/xfce4/xfconf/xfce-perchannel-xml
-mkdir -p "$X" "$HOME/.config/xfce4/panel"
+mkdir -p "$X"
 cp -n "$R"/xfce/*.xml "$X/"
-cp -n "$R"/xfce/panel/*.rc "$HOME/.config/xfce4/panel/"
 
 # 6. Ajustes fijos de XFCE (no cambian con el tema); solo si hay sesión XFCE
 if xfconf-query -c xsettings -l >/dev/null 2>&1; then
     xq() { xfconf-query -c "$1" -p "$2" -n -t string -s "$3"; }
     xq xfwm4 /general/theme "$XFWM"
     xfconf-query -c xsettings -p /Xfce/SyncThemes -n -t bool -s false   # que Apariencia no cambie el borde Square
-    xq xfwm4 /general/title_font "Roboto Bold 10"
+    xq xfwm4 /general/title_font "Roboto 9"
+    xq xfwm4 /general/button_layout "|HMC"   # sin el icono de la app a la izquierda (ya está en el panel)
     xq xsettings /Gtk/FontName "Roboto 10"
     xq xsettings /Gtk/MonospaceFontName "Iosevka Nerd Font 10"
     xq xfce4-notifyd /theme Square

@@ -9,7 +9,7 @@
       <property name="position" type="string" value="p=8;x=1280;y=1426"/>
       <property name="length" type="double" value="100"/>
       <property name="position-locked" type="bool" value="false"/>
-      <property name="icon-size" type="uint" value="26"/>
+      <property name="icon-size" type="uint" value="16"/>
       <property name="size" type="uint" value="26"/>
       <property name="plugin-ids" type="array">
         <value type="int" value="25"/>
@@ -24,13 +24,12 @@
         <value type="int" value="18"/>
         <value type="int" value="17"/>
         <value type="int" value="9"/>
-        <value type="int" value="20"/>
+        <value type="int" value="28"/>
         <value type="int" value="5"/>
         <value type="int" value="8"/>
         <value type="int" value="26"/>
         <value type="int" value="10"/>
         <value type="int" value="27"/>
-        <value type="int" value="12"/>
       </property>
       <property name="mode" type="uint" value="0"/>
       <property name="autohide-behavior" type="uint" value="1"/>
@@ -51,7 +50,7 @@
   <property name="plugins" type="empty">
     <property name="plugin-1" type="string" value="applicationsmenu">
       <property name="show-button-title" type="bool" value="false"/>
-      <property name="button-icon" type="string" value="archlinux-logo"/>
+      <property name="button-icon" type="string" value="archlinux-logo-symbolic"/>
     </property>
     <property name="plugin-2" type="string" value="tasklist">
       <property name="grouping" type="bool" value="true"/>
@@ -79,6 +78,8 @@
     </property>
     <property name="plugin-6" type="string" value="systray">
       <property name="square-icons" type="bool" value="true"/>
+      <property name="symbolic-icons" type="bool" value="true"/>
+      <property name="icon-size" type="int" value="14"/>
       <property name="known-legacy-items" type="array">
         <value type="string" value="blueman-tray"/>
         <value type="string" value="notes"/>
@@ -131,10 +132,10 @@
       <property name="mode" type="uint" value="2"/>
       <property name="show-week-numbers" type="bool" value="true"/>
       <property name="tooltip-format" type="string" value="%A %d %B %Y"/>
-      <property name="digital-layout" type="uint" value="1"/>
+      <property name="digital-layout" type="uint" value="3"/>
       <property name="digital-date-format" type="string" value="%a, %d %b %Y"/>
       <property name="digital-date-font" type="string" value="Monocraft Heavy Italic 9"/>
-      <property name="digital-time-format" type="string" value="%T"/>
+      <property name="digital-time-format" type="string" value="%a, %d %b %Y  %T"/>
       <property name="digital-time-font" type="string" value="Monocraft Heavy Italic 8"/>
     </property>
     <property name="plugin-9" type="string" value="separator">
@@ -142,23 +143,18 @@
     </property>
     <property name="plugin-10" type="string" value="actions">
       <property name="button-title" type="uint" value="3"/>
-      <property name="custom-title" type="string" value="Log Out"/>
+      <property name="custom-title" type="string" value="󰐥"/>
     </property>
     <property name="plugin-17" type="string" value="pulseaudio">
       <property name="enable-keyboard-shortcuts" type="bool" value="true"/>
       <property name="known-players" type="string" value="Brave;Chrome;firefox-developer-edition;spotify;vlc;zen"/>
     </property>
     <property name="plugin-18" type="string" value="power-manager-plugin"/>
-    <property name="plugin-20" type="string" value="systemload">
-      <property name="swap" type="empty">
-        <property name="enabled" type="bool" value="false"/>
-      </property>
-      <property name="network" type="empty">
-        <property name="enabled" type="bool" value="false"/>
-      </property>
-      <property name="uptime" type="empty">
-        <property name="enabled" type="bool" value="false"/>
-      </property>
+    <property name="plugin-28" type="string" value="genmon">
+      <property name="command" type="string" value="panel-stats"/>
+      <property name="use-label" type="bool" value="false"/>
+      <property name="update-period" type="int" value="2000"/>
+      <property name="font" type="string" value="JetBrainsMono NF 10"/>
     </property>
     <property name="plugin-22" type="string" value="separator">
       <property name="expand" type="bool" value="true"/>
@@ -185,6 +181,5 @@
         <property name="version" type="string" value="1.12.0"/>
       </property>
     </property>
-    <property name="plugin-12" type="string" value="netload"/>
   </property>
 </channel>

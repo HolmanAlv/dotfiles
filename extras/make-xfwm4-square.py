@@ -15,6 +15,8 @@ SRC = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else "/usr/share/themes/Defa
 DST = pathlib.Path(sys.argv[2] if len(sys.argv) > 2 else
                    pathlib.Path(__file__).resolve().parent.parent / "home/.local/share/themes/Square/xfwm4")
 OUT = "%"  # carácter libre para el color del contorno
+TITLE = 22  # alto de la barra de título (Default trae 29)
+CIRCLE_ON_HOVER = True  # en reposo solo el símbolo; el círculo gris sale al pasar el ratón. False: siempre círculo
 FAUSTO = pathlib.Path.home() / ".themes/Everforest-Dark/xfwm4"  # botones redondos (los PNG quedan en el repo)
 BUTTONS = {"close", "hide", "maximize", "maximize-toggled", "shade", "shade-toggled", "stick", "stick-toggled"}
 
@@ -41,6 +43,9 @@ def square(xpm, name):
     none = next((c[1] for c in colors if c.rstrip('",').endswith("c None")), None)
     state = "inactive" if "inactive" in name else "active"
     side = edges(name)
+    if "top" in side and h > TITLE:  # barra más fina: recorte centrado (las filas son lisas; los glifos quedan en medio)
+        cut = (h - TITLE) // 2
+        rows, h = rows[cut:cut + TITLE], TITLE
     grid = [list(r) for r in rows]
     if name.startswith("top-") and none:  # esquina redondeada: rellenar todo lo transparente
         fill = next(c[1] for c in colors if "c None" not in c)
@@ -68,6 +73,17 @@ def circle(png):
         for y in range(im.height):
             if sum(abs(a - b) for a, b in zip(px[x, y][:3], bg[:3])) < 6:
                 px[x, y] = (0, 0, 0, 0)
+    if CIRCLE_ON_HOVER and png.stem.rsplit("-", 1)[1] in ("active", "inactive"):
+        # el símbolo es lo más claro que el círculo: opacidad proporcional a cuánto lo aclara (conserva el antialias)
+        lum = lambda p: p[0] + p[1] + p[2]
+        opaque = [px[x, y] for x in range(im.width) for y in range(im.height) if px[x, y][3]]
+        disc = max(set(opaque), key=opaque.count)
+        glyph = max(opaque, key=lum)
+        for x in range(im.width if lum(glyph) > lum(disc) else 0):  # los "stick" de Fausto no llevan círculo
+            for y in range(im.height):
+                a = (lum(px[x, y]) - lum(disc)) / (lum(glyph) - lum(disc)) if px[x, y][3] else 0
+                px[x, y] = glyph[:3] + (round(255 * min(max(a, 0), 1)),)
+    im = im.resize((round(im.width * TITLE / im.height), TITLE), Image.LANCZOS)  # Pillow premultiplica el alfa
     im.save(DST / png.name)
     w, h = im.size
     state = "inactive" if "inactive" in png.stem else "active"
