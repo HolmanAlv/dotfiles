@@ -83,5 +83,7 @@ if [ "${2:-}" = --system ]; then
         fi
     done
     sudo sed -i -E 's/^greeter-session=.*/greeter-session=lightdm-gtk-greeter/' /etc/lightdm/lightdm.conf
+    # lightdm solo lee greeter-session al arrancar: cerrar sesión no basta
+    echo "login: reinicia el equipo para verlo (cerrar sesión no basta)"
 fi
 echo "tema: $name"
