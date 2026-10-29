@@ -4,7 +4,9 @@ Arch + XFCE (X11) con Everforest Dark Hard, bordes cuadrados y temas intercambia
 
 ![Escritorio](screenshots/desktop.png)
 
-![Alacritty con neofetch, btop y bat](screenshots/terminals.png)
+![Mosaico en espiral áurea: btop, neofetch y picom.conf](screenshots/tiling.png)
+
+![Ventanas flotantes con bordes Square: tiling -h y theme.env](screenshots/terminals.png)
 
 ![Rofi sobre Thunar](screenshots/rofi.png)
 
@@ -79,9 +81,3 @@ Super+Alt+↑ era "maximizar" en xfwm4: ahora es de `tiling`, que fuera del mosa
 | Zed | extensión "Everforest" (`zed: extensions`); Gruvbox ya viene incluido |
 | Spotify | `sudo chmod a+wr /opt/spotify && sudo chmod -R a+wr /opt/spotify/Apps`, luego `spicetify backup apply` |
 | Legcord | reiniciarlo para que cargue `quickCss.css` |
-
-## No incluido
-
-- GRUB: se queda el tema Hollow Knight.
-- xfce4-terminal: la terminal por defecto es Alacritty.
-- Configs huérfanas (hypr, waybar, wofi, mako, swaylock, starship): no se tocan.
