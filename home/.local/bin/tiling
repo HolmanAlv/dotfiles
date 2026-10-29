@@ -1,13 +1,25 @@
 #!/usr/bin/env python3
-# tiling            : switch del mosaico en el escritorio actual (Super+T). Encendido: espiral áurea, sin barras.
-# tiling focus h|j|k|l : foco a la ventana de la izquierda, abajo, arriba o derecha (Super+Alt+H/J/K/L).
-# tiling swap       : la ventana activa pasa a ser la principal (Super+Alt+Enter).
-# tiling move h|j|k|l : intercambia la activa con la vecina en esa dirección (Super+Alt+Shift+H/J/K/L).
-#                     Con el ratón: Alt + arrastrar una ventana y soltarla encima de otra.
-# tiling resize left|right|up|down : mueve el borde de la ventana activa; las vecinas ceden (Super+Alt+flechas).
-#                     Fuera del mosaico, "up" maximiza como el atajo de xfwm4 al que sustituye.
-#                     Con el ratón: Alt + arrastrar con el botón derecho (xfwm4); las vecinas se ajustan al soltar.
-# tiling daemon     : coloca las ventanas (lo lanza el autostart); los demás comandos le escriben por un FIFO.
+"""tiling: mosaico en espiral áurea sobre xfwm4. Apagado al iniciar sesión.
+
+Teclado
+  Super+T                    encender/apagar el mosaico en este escritorio (encendido: sin barras)
+  Super+Alt+H/J/K/L          foco a la ventana de la izquierda / abajo / arriba / derecha
+  Super+Alt+Enter            la ventana activa pasa a ser la principal
+  Super+Alt+Shift+H/J/K/L    intercambiar la activa con la vecina en esa dirección
+  Super+Alt+flechas          mover el borde de la activa 40px; las vecinas ceden
+                             (fuera del mosaico, ↑ maximiza y restaura)
+Ratón
+  Alt+arrastrar              soltar una ventana encima de otra las intercambia
+  Alt+arrastrar (derecho)    redimensionar; las vecinas se ajustan al soltar
+
+Comandos (los que lanzan los atajos)
+  tiling                            encender/apagar (Super+T)
+  tiling focus|move h|j|k|l
+  tiling swap
+  tiling resize left|right|up|down
+  tiling daemon                     coloca las ventanas (lo lanza el autostart); los demás le escriben por un FIFO
+  tiling -h | --help                esta ayuda
+"""
 import json, os, subprocess, sys, time
 
 RUN = os.environ.get('XDG_RUNTIME_DIR', '/tmp')  # se vacía al cerrar sesión: el mosaico arranca apagado
@@ -23,6 +35,9 @@ def send(cmd):
     os.write(fd, (cmd + '\n').encode())
     os.close(fd)
 
+
+if sys.argv[1:2] in (['-h'], ['--help'], ['help']):
+    sys.exit(print(__doc__, end=''))
 
 if sys.argv[1:] != ['daemon']:
     cmd = ' '.join(sys.argv[1:]) or 'toggle'

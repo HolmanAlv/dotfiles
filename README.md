@@ -37,7 +37,7 @@ theme everforest --system   # además el login (LightDM, pide sudo)
 
 ## Mosaico (tiling)
 
-`home/.local/bin/tiling`: mosaico propio sobre xfwm4 (Python + Wnck, sin dependencias nuevas). Apagado al iniciar; **Super+T** lo enciende o apaga en el escritorio actual.
+`home/.local/bin/tiling`: mosaico propio sobre xfwm4 (Python + Wnck, sin dependencias nuevas). Apagado al iniciar; **Super+T** lo enciende o apaga en el escritorio actual. `tiling -h` recuerda todos los atajos.
 
 - Espiral áurea: cada ventana nueva se queda con el 61,8 % del hueco libre, girando derecha → abajo → izquierda → arriba. Sin límite de ventanas.
 - Redimensionar una ventana mueve el corte que comparte con sus vecinas: si una crece, las de al lado encogen. Con el teclado o con el ratón (Alt + arrastrar con el botón derecho; las vecinas se ajustan al soltar). Mover una ventana con el ratón (Alt + arrastrar) y soltarla encima de otra las intercambia; soltarla en otro sitio la devuelve a su hueco.
