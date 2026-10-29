@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=Picom
+Comment=Compositor con animaciones (sustituye al de xfwm4, que queda apagado)
+Exec=picom
+X-XFCE-Autostart-Override=true

@@ -33,6 +33,7 @@ theme everforest --system   # además el login (LightDM, pide sudo)
 - Alacritty: fondo un tono más oscuro que el de las ventanas (bg_dim / hard) y selección gris.
 - Panel: iconos monocromos (bandeja en modo simbólico y los `-symbolic` de `home/.local/share/icons/hicolor`, más `window > image` en gtk.css para los de bandeja antiguos como Clipman). Para cualquier otra app de bandeja, `extras/icons/tray-symbolic.tar.zst`: ~7000 `-symbolic` sacados de los iconos de panel de Everforest-Dark (`extras/make-tray-symbolic.py`; si una app nueva sale en color, añadir su nombre a `ALIASES`). Las que mandan imagen (Electron) se configuran en la app: Legcord usa `dsc-tray`. CPU, RAM y WiFi con genmon + `panel-stats` (solo builtins de bash, cada 2 s).
 - Apps Qt: `QT_QPA_PLATFORMTHEME=gtk3` en `.xprofile`, sin Kvantum. Hace falta volver a iniciar sesión.
+- Compositor: picom (`home/.config/picom/picom.conf`, arranca con `home/.config/autostart/picom.desktop`) en lugar del de xfwm4, que `install.sh` apaga. Sin sombras ni esquinas redondas; anima abrir/cerrar (escala + fundido) y mover/redimensionar (experimental: también al arrastrar y al recolocar del mosaico). Cuesta ~4 % más de un núcleo que xfwm4 con ventanas en movimiento; GPU igual.
 
 ## Mosaico (tiling)
 

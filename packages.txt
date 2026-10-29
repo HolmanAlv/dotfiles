@@ -14,3 +14,4 @@ aur:gtk-engine-murrine
 aur:spicetify-cli
 libwnck3
 python-gobject
+picom

@@ -74,6 +74,7 @@ if xfconf-query -c xsettings -l >/dev/null 2>&1; then
     xfconf-query -c xsettings -p /Xfce/SyncThemes -n -t bool -s false   # que Apariencia no cambie el borde Square
     xq xfwm4 /general/title_font "Roboto 9"
     xq xfwm4 /general/button_layout "|HMC"   # sin el icono de la app a la izquierda (ya está en el panel)
+    xfconf-query -c xfwm4 -p /general/use_compositing -n -t bool -s false   # compone picom (autostart), con animaciones
     xq xsettings /Gtk/FontName "Roboto 10"
     xq xsettings /Gtk/MonospaceFontName "Iosevka Nerd Font 10"
     xq xfce4-notifyd /theme Square
