@@ -1,0 +1,5 @@
+#!/bin/sh
+# xserver : Xorg apartado del OOM del kernel. Si tiene que actuar, que elija una app y no Xorg (el 2026-09-28 mató
+# Xorg y con él la sesión). Va en un script porque LightDM mete sus argumentos tras la primera palabra de
+# xserver-command: "choom -n -900 -- X" recibía "choom :0 -seat ..." y Xorg no arrancaba.
+exec choom -n -900 -- /usr/bin/X "$@"

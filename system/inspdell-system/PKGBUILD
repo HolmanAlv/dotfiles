@@ -2,7 +2,7 @@
 # el dueño de cada archivo (-Qo) y la vuelta atrás (-R). Construir aquí con: makepkg -f
 pkgname=inspdell-system
 pkgver=1
-pkgrel=1
+pkgrel=2
 pkgdesc='Ajustes del Dell Inspiron 3481: memoria, disco, red, arranque y sesión'
 arch=(any)
 license=(MIT)
