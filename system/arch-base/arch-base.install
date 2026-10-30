@@ -1,0 +1,4 @@
+# El menú de GRUB depende de etc/default/grub.d/90-base.cfg (sin GRUB no hace nada)
+post_install() { command -v grub-mkconfig >/dev/null && grub-mkconfig -o /boot/grub/grub.cfg; true; }
+post_upgrade() { post_install; }
+post_remove() { post_install; }

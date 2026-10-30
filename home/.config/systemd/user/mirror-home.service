@@ -2,6 +2,8 @@
 # Si el HDD no está, el automontaje falla y rsync no escribe nada en el NVMe.
 [Unit]
 Description=Espejo de ~ en ~/HDD/Respaldo
+# Sin el HDD (u otro PC) se salta: rsync crearía ~/HDD/Respaldo dentro de ~ y se copiaría a sí mismo
+ConditionPathIsDirectory=%h/HDD/Respaldo
 
 [Service]
 Type=oneshot

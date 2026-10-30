@@ -1,4 +1,4 @@
-# El menú de GRUB depende de etc/default/grub.d/90-inspdell.cfg
+# El menú de GRUB depende de etc/default/grub.d/91-inspdell.cfg
 post_install() { grub-mkconfig -o /boot/grub/grub.cfg; }
 post_upgrade() { post_install; }
 post_remove() { post_install; }

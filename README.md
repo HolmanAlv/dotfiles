@@ -20,6 +20,12 @@ theme gruvbox           # cambiar de tema (en vivo)
 theme everforest --system   # además el login (LightDM, pide sudo): drop-in en /etc/xdg/lightdm/lightdm-gtk-greeter.conf.d, assets en /usr/local/share
 ```
 
+## Sistema (`system/`)
+
+- `arch-base`: ajustes para cualquier PC con Arch + XFCE (zram, sysctl de memoria, THP, tope de `/tmp`, journald y coredumps con límite, LLMNR/mDNS fuera, sudoers, GRUB y LightDM por drop-ins, Xorg apartado del OOM).
+- `inspdell-system`: lo del Dell Inspiron 3481 encima de `arch-base` (WiFi/Ethernet, mitigación de CPU, GRUB con Pond, TLP, pantalla 2K). En otro PC no se instala.
+- Se construyen con `makepkg -f` en su carpeta y se instalan con `sudo pacman -U`; `pacman -R` los deshace. `system/bench` mide el equipo (`~/inspdell-logs/bench-<nombre>.txt`).
+
 ## Cómo está hecho
 
 - `home/` es un espejo de `~`. `install.sh` copia cada fichero (lo que ya existía distinto queda como `*.pre-dotfiles`), y los temas a `~/.local/share/dotfiles/themes`. Nada apunta al repo: se puede mover o borrar. Se edita en `~` y `--capture` lo trae de vuelta; `install.sh` pisa lo que no se haya capturado.

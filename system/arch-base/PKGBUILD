@@ -1,0 +1,29 @@
+# Ajustes de sistema para cualquier PC con Arch + XFCE: memoria (zram), logs, red, arranque y sesión.
+# Como paquete: pacman da el inventario (-Ql), la deriva (-Qkk), el dueño de cada archivo (-Qo)
+# y la vuelta atrás (-R). Lo propio de cada máquina va en otro paquete que depende de este (inspdell-system).
+# Construir aquí con: makepkg -f
+pkgname=arch-base
+pkgver=1
+pkgrel=1
+pkgdesc='Ajustes de sistema comunes: memoria, logs, red, arranque y sesión'
+arch=(any)
+license=(MIT)
+depends=(zram-generator wireless-regdb pacman-contrib)
+backup=(etc/default/grub.d/90-base.cfg
+        etc/lightdm/lightdm.conf.d/90-base.conf
+        etc/makepkg.conf.d/90-base.conf
+        etc/sudoers.d/90-base
+        etc/systemd/resolved.conf.d/90-base.conf)
+install=$pkgname.install
+
+check() {
+    visudo -cf "$startdir/etc/sudoers.d/90-base"
+}
+
+package() {
+    # cp -r y no -a: con -a, fakeroot guardaría el uid 1000 como dueño, sudo ignoraría el drop-in
+    # y root ejecutaría scripts editables por el usuario. Tras construir: bsdtar -tvf debe dar todo root root.
+    cp -r "$startdir"/{etc,usr} "$pkgdir"/
+    chmod 750 "$pkgdir"/etc/sudoers.d
+    chmod 440 "$pkgdir"/etc/sudoers.d/90-base
+}

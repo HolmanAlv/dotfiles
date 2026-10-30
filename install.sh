@@ -15,9 +15,11 @@ if [ "${1:-}" = --capture ]; then
     git ls-files themes | while read -r f; do [ ! -f "$D/$f" ] || cp "$D/$f" "$f"; done
     cp "$HOME/.local/bin/theme" bin/theme
     sed "s|$HOME|\$HOME|g" "$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml" > xfce/xfce4-keyboard-shortcuts.xml
-    # /etc del paquete del sistema: lo que pacman ve cambiado (lo que solo lee root, como sudoers, no)
-    pacman -Qkk inspdell-system 2>/dev/null | sed -n 's|^backup file: inspdell-system: /\(etc/[^ ]*\) .*|\1|p' |
-        sort -u | while read -r f; do cp "/$f" "system/inspdell-system/$f" || true; done
+    # /etc de los paquetes del sistema: lo que pacman ve cambiado (lo que solo lee root, como sudoers, no)
+    for p in arch-base inspdell-system; do
+        pacman -Qkk $p 2>/dev/null | sed -n "s|^backup file: $p: /\(etc/[^ ]*\) .*|\1|p" |
+            sort -u | while read -r f; do cp "/$f" "system/$p/$f" || true; done
+    done
     git status -s
     exit
 fi
