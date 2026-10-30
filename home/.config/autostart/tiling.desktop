@@ -1,6 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Tiling
-Comment=Mosaico en espiral áurea; apagado al iniciar, Super+T lo enciende en el escritorio actual
-Exec=sh -c 'exec "$HOME/.local/bin/tiling" daemon'
-X-XFCE-Autostart-Override=true
