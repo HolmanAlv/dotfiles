@@ -1,9 +1,25 @@
 #!/bin/sh
 # install.sh [--no-pkgs] : deja el escritorio como en este repo. Se puede repetir sin romper nada.
+# install.sh --capture   : el camino inverso; trae al repo lo que cambiaste en el equipo. Luego: git status
+# Todo se copia, nada apunta al repo: se puede mover o borrar sin romper el escritorio.
+# Ojo: install.sh pisa lo que cambiaste en ~ (lo guarda como *.pre-dotfiles); captura antes.
 set -eu
 R=$(dirname "$(readlink -f "$0")")
 C=$HOME/.cache/dotfiles
+D=$HOME/.local/share/dotfiles  # temas (theme los lee de aquí)
 XFWM=Square       # bordes de ventana: home/.local/share/themes/Square/xfwm4 (colores del tema GTK)
+
+if [ "${1:-}" = --capture ]; then
+    cd "$R"
+    git ls-files home | while read -r f; do [ ! -f "$HOME/${f#home/}" ] || cp "$HOME/${f#home/}" "$f"; done
+    git ls-files themes | while read -r f; do [ ! -f "$D/$f" ] || cp "$D/$f" "$f"; done
+    cp "$HOME/.local/bin/theme" bin/theme
+    # /etc del paquete del sistema: lo que pacman ve cambiado (lo que solo lee root, como sudoers, no)
+    pacman -Qkk inspdell-system 2>/dev/null | sed -n 's|^backup file: inspdell-system: /\(etc/[^ ]*\) .*|\1|p' |
+        sort -u | while read -r f; do cp "/$f" "system/inspdell-system/$f" || true; done
+    git status -s
+    exit
+fi
 
 # 1. Paquetes
 if [ "${1:-}" != --no-pkgs ]; then
@@ -34,16 +50,17 @@ if [ ! -d "$HOME/.local/share/icons/everforest-cursors" ]; then
         tar xj -C "$HOME/.local/share/icons" everforest-cursors
 fi
 
-# 4. Enlazar home/ en ~ fichero a fichero; lo que ya existía se guarda como *.pre-dotfiles
+# 4. Copiar home/ en ~ fichero a fichero; lo que ya existía distinto se guarda como *.pre-dotfiles
 cd "$R/home"
 find . -type f | while read -r f; do
     src=$R/home/${f#./} dst=$HOME/${f#./}
-    [ "$(readlink -f "$dst")" = "$src" ] && continue
+    if [ "$(readlink -f "$dst")" = "$src" ]; then rm "$dst"   # enlace al repo de versiones anteriores
+    elif [ -e "$dst" ] || [ -L "$dst" ]; then cmp -s "$src" "$dst" || mv "$dst" "$dst.pre-dotfiles"; fi
     mkdir -p "$(dirname "$dst")"
-    if [ -e "$dst" ] || [ -L "$dst" ]; then mv "$dst" "$dst.pre-dotfiles"; fi
-    ln -s "$src" "$dst"
+    cp "$src" "$dst"
 done
-mkdir -p "$HOME/.local/bin" && ln -sfn "$R/bin/theme" "$HOME/.local/bin/theme"
+mkdir -p "$HOME/.local/bin" "$D" && rm -f "$HOME/.local/bin/theme" && cp "$R/bin/theme" "$HOME/.local/bin/theme"
+cp -rT "$R/themes" "$D/themes"
 # iconos -symbolic del panel: los hechos a mano (Arch, Spotify, Clipman) y los de bandeja para cualquier app
 # (extras/make-tray-symbolic.py); sin regenerar la caché GTK no los ve
 tar -C "$HOME/.local/share/icons/hicolor" --zstd -xf "$R/extras/icons/tray-symbolic.tar.zst"
@@ -57,7 +74,7 @@ L=$HOME/.config/legcord/storage/settings.json
 [ -f "$L" ] && sed -i 's/"tray": *"[^"]*"/"tray": "dsc-tray"/' "$L"
 if command -v spicetify >/dev/null; then
     mkdir -p "$HOME/.config/spicetify/Themes"
-    ln -sfn "$R/extras/spicetify/text" "$HOME/.config/spicetify/Themes/text"
+    rm -rf "$HOME/.config/spicetify/Themes/text" && cp -r "$R/extras/spicetify/text" "$HOME/.config/spicetify/Themes/text"
     spicetify backup >/dev/null 2>&1 || true   # solo la primera vez; luego ya existe
 fi
 command -v code >/dev/null && code --install-extension jdinhlife.gruvbox >/dev/null
@@ -96,6 +113,6 @@ if xfconf-query -c xsettings -l >/dev/null 2>&1; then
     xq xfce4-screensaver $s/background-color "#000000"
     xq xfce4-screensaver $s/arguments "--location=$HOME/.config/theme/walls --background-color=#000000"
     systemctl --user try-restart xdg-desktop-portal-gtk  # el portal (diálogos de archivos) solo lee gtk.css al arrancar
-    "$R/bin/theme" everforest
+    "$HOME/.local/bin/theme" everforest
 fi
 echo "listo. Login: theme everforest --system"

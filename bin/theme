@@ -1,12 +1,13 @@
 #!/bin/sh
-# theme <nombre> [--system] : aplica themes/<nombre>. Con --system también el login (LightDM, pide sudo).
+# theme <nombre> [--system] : aplica el tema <nombre>. Con --system también el login (LightDM, pide sudo).
+# Los temas son la copia local que deja install.sh en ~/.local/share/dotfiles/themes: nada apunta al repo.
 set -eu
 [ "$(id -u)" != 0 ] || { echo "theme: ejecútalo sin sudo (con --system pide la contraseña él solo)" >&2; exit 1; }
-R=$(dirname "$(dirname "$(readlink -f "$0")")")
+D=$HOME/.local/share/dotfiles/themes
 name=${1:-}
-T=$R/themes/$name
+T=$D/$name
 if [ -z "$name" ] || [ ! -f "$T/theme.env" ]; then
-    echo "uso: theme <$(ls "$R/themes" | paste -sd'|')> [--system]" >&2
+    echo "uso: theme <$(ls "$D" | paste -sd'|')> [--system]" >&2
     exit 1
 fi
 . "$T/theme.env"
@@ -84,27 +85,23 @@ touch "$HOME/.config/alacritty/alacritty.toml"
 if [ "${2:-}" = --system ]; then
     LOGIN_WALL=${LOGIN_WALL:-$WALL}
     ext=${LOGIN_WALL##*.}
-    # El greeter corre como usuario lightdm y no puede leer ~. Iconos: Adwaita (ya en el sistema;
-    # copiar los Colloid serían ~54MB para 5 iconos simbólicos casi iguales)
-    sudo cp -rLT "$HOME/.themes/$GTK" "/usr/share/themes/$GTK"
+    # El greeter corre como usuario lightdm y no puede leer ~: lo suyo va a /usr/local/share (no a /usr/share,
+    # que es de los paquetes). Excepción: el cursor, porque libXcursor no busca en /usr/local.
+    # Iconos: Adwaita (ya en el sistema; copiar los Colloid serían ~54MB para 5 iconos simbólicos casi iguales)
+    S=/usr/local/share
+    sudo cp -rLT "$HOME/.themes/$GTK" "$S/themes/$GTK"
     sudo cp -rLT "$HOME/.local/share/icons/$CURSOR" "/usr/share/icons/$CURSOR"
-    sudo install -Dm644 "$LOGIN_WALL" "/usr/share/backgrounds/dotfiles-login.$ext"
+    sudo install -Dm644 "$LOGIN_WALL" "$S/backgrounds/dotfiles-login.$ext"
     # Avatar simbólico de Adwaita con el blanco del tema (el greeter lo pinta con el acento)
     sed "s/#2e3436/$FG/" /usr/share/icons/Adwaita/symbolic/status/avatar-default-symbolic.svg |
-        sudo tee /usr/share/backgrounds/dotfiles-avatar.svg >/dev/null
-    g=/etc/lightdm/lightdm-gtk-greeter.conf
-    for kv in "theme-name=$GTK" "icon-theme-name=Adwaita" "cursor-theme-name=$CURSOR" \
-              "background=/usr/share/backgrounds/dotfiles-login.$ext" "font-name=Roboto 11" \
-              "default-user-image=/usr/share/backgrounds/dotfiles-avatar.svg"; do
-        k=${kv%%=*} v=${kv#*=}
-        if sudo grep -qE "^#?$k *=" "$g"; then
-            sudo sed -i -E "s|^#?$k *=.*|$k = $v|" "$g"
-        else
-            sudo sed -i "/^\[greeter\]/a $k = $v" "$g"
-        fi
-    done
-    sudo sed -i -E 's/^greeter-session=.*/greeter-session=lightdm-gtk-greeter/' /etc/lightdm/lightdm.conf
-    # lightdm solo lee greeter-session al arrancar: cerrar sesión no basta
-    echo "login: reinicia el equipo para verlo (cerrar sesión no basta)"
+        sudo tee "$S/backgrounds/dotfiles-avatar.svg" >/dev/null
+    # Drop-in: lightdm-gtk-greeter.conf se queda de fábrica. El greeter lee $XDG_CONFIG_DIRS/lightdm/
+    # lightdm-gtk-greeter.conf.d/*.conf; lightdm.conf ya lo fija el paquete inspdell-system
+    g=/etc/xdg/lightdm/lightdm-gtk-greeter.conf.d
+    sudo mkdir -p "$g"
+    printf '[greeter]\ntheme-name = %s\nicon-theme-name = Adwaita\ncursor-theme-name = %s\nfont-name = Roboto 11\nbackground = %s\ndefault-user-image = %s\n' \
+        "$GTK" "$CURSOR" "$S/backgrounds/dotfiles-login.$ext" "$S/backgrounds/dotfiles-avatar.svg" |
+        sudo tee "$g/90-dotfiles.conf" >/dev/null
+    echo "login: se ve al cerrar sesión"
 fi
 echo "tema: $name"

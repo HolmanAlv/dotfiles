@@ -49,6 +49,8 @@ export BAT_THEME=ansi
 [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
 
 # PATH: incluye binarios locales para pipx, cargo, scripts, etc.
+# -U: sin repetidos (.zprofile, fnm y los instaladores también lo añaden; se queda la primera aparición)
+typeset -U path PATH
 export PATH="$HOME/.local/bin:$PATH"
 
 #alias

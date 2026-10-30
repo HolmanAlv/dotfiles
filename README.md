@@ -13,16 +13,17 @@ Arch + XFCE (X11) con Everforest Dark Hard, bordes cuadrados y temas intercambia
 ## Uso
 
 ```sh
-./install.sh            # máquina nueva: paquetes, temas, enlaces, ajustes XFCE
+./install.sh            # máquina nueva: paquetes, temas, configs, ajustes XFCE
 ./install.sh --no-pkgs  # sin pacman/yay
+./install.sh --capture  # al revés: trae al repo lo que cambiaste en el equipo (luego git status)
 theme gruvbox           # cambiar de tema (en vivo)
-theme everforest --system   # además el login (LightDM, pide sudo)
+theme everforest --system   # además el login (LightDM, pide sudo): drop-in en /etc/xdg/lightdm/lightdm-gtk-greeter.conf.d, assets en /usr/local/share
 ```
 
 ## Cómo está hecho
 
-- `home/` es un espejo de `~`. `install.sh` enlaza cada fichero; lo que ya existía queda como `*.pre-dotfiles`.
-- `~/.config/theme` es un enlace a `themes/<nombre>`. Alacritty, Rofi, p10k y Legcord importan sus colores desde ahí, así que sus configs no cambian nunca.
+- `home/` es un espejo de `~`. `install.sh` copia cada fichero (lo que ya existía distinto queda como `*.pre-dotfiles`), y los temas a `~/.local/share/dotfiles/themes`. Nada apunta al repo: se puede mover o borrar. Se edita en `~` y `--capture` lo trae de vuelta; `install.sh` pisa lo que no se haya capturado.
+- `~/.config/theme` es un enlace a `~/.local/share/dotfiles/themes/<nombre>`. Alacritty, Rofi, p10k y Legcord importan sus colores desde ahí, así que sus configs no cambian nunca.
 - `bin/theme` aplica el resto:
   - por xfconf: GTK, iconos, cursor y fondo;
   - por gsettings: libadwaita y Electron;
@@ -46,7 +47,7 @@ theme everforest --system   # además el login (LightDM, pide sudo)
 - Encendido, las ventanas van sin barra de título y separadas por 2px (`GAP`): xfwm4 no sabe dibujar el borde sin la barra.
 - Fuera del mosaico: diálogos, ventanas fijadas en todos los escritorios, pantalla completa y las que maximizas. Al encender se desmaximizan todas una vez.
 - El estado (escritorios en mosaico y ventanas sin barra) se guarda en `$XDG_RUNTIME_DIR/tiling.json`: reiniciar el daemon no lo pierde, cerrar sesión sí.
-- `tiling daemon` (lo lanza `home/.config/autostart/tiling.desktop`) coloca las ventanas; los atajos le mandan órdenes por un FIFO en `$XDG_RUNTIME_DIR`. Los atajos son de XFCE, así que funcionan con Bloq Num.
+- `tiling daemon` (lo lanza el primer atajo, no ocupa memoria hasta entonces) coloca las ventanas; los atajos le mandan órdenes por un FIFO en `$XDG_RUNTIME_DIR`. Los atajos son de XFCE, así que funcionan con Bloq Num.
 - Solo usa el monitor principal.
 
 | Atajo | Acción |
