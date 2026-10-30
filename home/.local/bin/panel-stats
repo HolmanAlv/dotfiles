@@ -11,6 +11,8 @@ done < /proc/meminfo
 
 { read -r; read -r; read -r ifc _ link _; } < /proc/net/wireless
 ifc=${ifc%:} link=${link%.}
+# sin ruta por defecto = sin internet (la línea de /proc/net/wireless sigue ahí aunque se caiga el WiFi)
+while read -r _ dst _; do [ "$dst" = 00000000 ] && { gw=1; break; }; done < /proc/net/route
 # split por ':' porque con contadores grandes el kernel pega el número al nombre ("wlp2s0:123456789")
 while IFS=: read -r name rest; do
     [ -n "$ifc" ] && [ "${name// }" = "$ifc" ] && { set -- $rest; rx=$1 tx=$9; break; }
@@ -29,14 +31,22 @@ up=$((us > 0 && tx >= p_tx ? (tx-p_tx)*1000000/us : 0))
 dec() { printf -v "$1" '%d.%d' $(($2/1048576)) $(($2%1048576*10/1048576)); }
 rate() { if (($2 >= 1048576)); then dec "$1" "$2"; printf -v "$1" '%sM' "${!1}"; else printf -v "$1" '%dK' $(($2/1024)); fi; }
 dec ram $((mt-ma)); dec tot_ram "$mt"   # kB → GiB
+ram_pct=$((100*(mt-ma)/mt))
+
+# $1 = variable, $2 = % de uso → color del tema (gris) <50, verde ≥50, amarillo ≥60, naranja ≥80, rojo ≥90
+color() {
+    local c=; (($2 >= 50)) && c='#a7c080'; (($2 >= 60)) && c='#dbbc7f'; (($2 >= 80)) && c='#e69875'; (($2 >= 90)) && c='#e67e80'
+    printf -v "$1" %s "${c:+ foreground=\"$c\"}"
+}
+color cpu_c "$cpu"; color ram_c "$ram_pct"
 rate down "$down"; rate up "$up"
 
 I='<span size="xx-large">' E='</span>'   # glifos a altura de icono (16px), números a la del texto
-if [ -n "$ifc" ]; then
+if [ -n "$gw" ]; then
     printf -v net "$I\U000f05a9$E ↓%4s ↑%4s" "$down" "$up"
     tip="WiFi $ifc · señal $((link*100/70))%"   # ath10k da la calidad sobre 70
 else
-    printf -v net "$I\U000f05aa$E"; tip="WiFi desconectado"
+    printf -v net "<span foreground=\"#e67e80\">$I\U000f05aa$E</span>"; tip="Sin internet"
 fi
-printf "<txt>$I\U000f0ee0$E %3d%%  $I\U000f035b$E %s  %s</txt><tool>CPU %d%%\nRAM %s / %s\n%s</tool>\n" \
-    "$cpu" "${ram}G" "$net" "$cpu" "$ram" "${tot_ram} GiB" "$tip"
+printf "<txt><span%s>$I\U000f0ee0$E %3d%%</span>  <span%s>$I\U000f035b$E %s</span>  %s</txt><tool>CPU %d%%\nRAM %s / %s (%d%%)\n%s</tool>\n" \
+    "$cpu_c" "$cpu" "$ram_c" "${ram}G" "$net" "$cpu" "$ram" "${tot_ram} GiB" "$ram_pct" "$tip"
