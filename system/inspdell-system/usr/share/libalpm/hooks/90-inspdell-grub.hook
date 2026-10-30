@@ -1,0 +1,11 @@
+# Al actualizar grub, instala el GRUB nuevo en la ESP antes de regenerar el menú: la ESP se quedó en 2.14
+# con el paquete en 2.16, y menú nuevo sobre módulos viejos es lo que dejó sin arranque a muchos Arch en 2022.
+[Trigger]
+Type = Package
+Operation = Upgrade
+Target = grub
+
+[Action]
+Description = Instalando GRUB en la ESP y regenerando grub.cfg...
+When = PostTransaction
+Exec = /bin/sh -c 'grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=arch --no-nvram && grub-mkconfig -o /boot/grub/grub.cfg'

@@ -1,0 +1,28 @@
+# Ajustes del sistema del InspDell como paquete: pacman da el inventario (-Ql), la deriva (-Qkk),
+# el dueño de cada archivo (-Qo) y la vuelta atrás (-R). Construir aquí con: makepkg -f
+pkgname=inspdell-system
+pkgver=1
+pkgrel=1
+pkgdesc='Ajustes del Dell Inspiron 3481: memoria, disco, red, arranque y sesión'
+arch=(any)
+license=(MIT)
+depends=(intel-ucode intel-media-driver wireless-regdb pacman-contrib)
+backup=(etc/default/grub.d/90-inspdell.cfg
+        etc/lightdm/lightdm.conf.d/90-inspdell.conf
+        etc/makepkg.conf.d/90-inspdell.conf
+        etc/sudoers.d/90-inspdell
+        etc/systemd/resolved.conf.d/90-inspdell.conf
+        etc/tlp.d/90-inspdell.conf)
+install=$pkgname.install
+
+check() {
+    visudo -cf "$startdir/etc/sudoers.d/90-inspdell"
+}
+
+package() {
+    # cp -r y no -a: con -a, fakeroot guardaría el uid 1000 como dueño, sudo ignoraría el drop-in
+    # y root ejecutaría scripts editables por el usuario. Tras construir: bsdtar -tvf debe dar todo root root.
+    cp -r "$startdir"/{etc,usr} "$pkgdir"/
+    chmod 750 "$pkgdir"/etc/sudoers.d
+    chmod 440 "$pkgdir"/etc/sudoers.d/90-inspdell
+}

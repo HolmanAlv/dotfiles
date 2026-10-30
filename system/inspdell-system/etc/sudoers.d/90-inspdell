@@ -1,0 +1,3 @@
+# sudoers queda de fábrica, y la de fábrica trae comentada la línea de wheel: sin esto no habría sudo
+%wheel ALL=(ALL:ALL) ALL
+Defaults pwfeedback

@@ -1,0 +1,34 @@
+#!/bin/bash
+# Watchdog para el QCA9377: si el gateway no responde a ARP, reinicia el WiFi
+# (replica el toggle manual que ya sabemos que lo recupera).
+# ARP y no ping: hay redes (Red_UD_Estudiantes) cuyo gateway ignora ICMP.
+IFACE=wlp2s0
+
+# Si systemd nos para a mitad del toggle (apagado), deja la radio encendida;
+# si no, NM guarda "WiFi apagado" y el siguiente arranque sale sin WiFi.
+toggling=
+trap '[[ $toggling ]] && nmcli radio wifi on; exit' TERM
+
+while true; do
+    sleep 30
+    state=$(nmcli -t -f DEVICE,STATE device | grep "^$IFACE:" | cut -d: -f2)
+    [[ $state == connected ]] || continue
+    gw=$(ip route show default dev "$IFACE" | awk '{print $3; exit}')
+    [[ -n $gw ]] || continue
+    ok=0
+    for _ in 1 2 3; do
+        if arping -c1 -w2 -I "$IFACE" "$gw" >/dev/null 2>&1; then
+            ok=1
+            break
+        fi
+        sleep 2
+    done
+    [[ $ok == 1 ]] && continue
+    logger -t wifi-watchdog "gateway $gw sin respuesta ARP, reiniciando WiFi"
+    toggling=1
+    nmcli radio wifi off
+    sleep 3
+    nmcli radio wifi on
+    toggling=
+    sleep 20
+done

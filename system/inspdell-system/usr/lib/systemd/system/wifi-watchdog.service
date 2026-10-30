@@ -1,0 +1,10 @@
+# Se activa con el enlace estático en multi-user.target.wants (lo trae el paquete, no un enable suelto)
+[Unit]
+Description=WiFi watchdog (recuperacion de cuelgues del QCA9377)
+After=NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+ExecStart=/usr/lib/inspdell/wifi-watchdog
+Restart=always
+RestartSec=10

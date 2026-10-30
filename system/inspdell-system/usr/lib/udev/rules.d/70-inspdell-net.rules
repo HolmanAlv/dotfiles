@@ -1,0 +1,4 @@
+# QCA9377 (WiFi): sin runtime PM ni ASPM, que agravan sus cuelgues
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x168c", ATTR{device}=="0x0042", ATTR{power/control}="on", RUN+="/bin/sh -c 'for f in /sys$devpath/link/*aspm*; do echo 0 > $$f 2>/dev/null || true; done'"
+# RTL8106E (Ethernet): su L0s generaba cientos de miles de errores AER
+ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10ec", ATTR{device}=="0x8136", ATTR{link/l0s_aspm}="0"

@@ -1,0 +1,12 @@
+#!/bin/sh
+# display-setup : LightDM lo ejecuta como root antes del greeter. Con monitor externo usa solo ese (2K);
+# si no, la pantalla del portátil. La interna se reconoce por ^eDP (eDP1 con el driver intel, eDP-1 con modesetting).
+int=$(xrandr | awk '/^eDP/ {print $1; exit}')
+ext=$(xrandr | awk '/ connected/ && !/^eDP/ {print $1; exit}')
+if [ -n "$ext" ]; then
+    xrandr --output "$ext" --primary --mode 2560x1440 --rate 60 --output "$int" --off ||
+        xrandr --output "$ext" --primary --auto --output "$int" --off
+else
+    xrandr --output "$int" --primary --auto
+fi
+exit 0  # si falla, LightDM no arranca el greeter: mejor una pantalla mal puesta que ninguna
