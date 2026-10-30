@@ -1,11 +1,20 @@
 #!/bin/bash
-# moonlight : en casa conecta a nitrocachy por la red local; fuera, por Tailscale (su dirección manual).
+# moonlight : elige ruta y calidad según dónde estés, antes de abrir el Moonlight real.
+#   En casa (Sunshine responde en la LAN): red local, 60 fps y 20 Mbps.
+#   Fuera: Tailscale (la dirección manual), 30 fps y 3 Mbps para gastar menos datos.
 # Sunshine le devuelve a Moonlight como "local" la IP por la que entró. Tras una sesión por Tailscale
-# esa IP (100.x) queda guardada como local, y Moonlight sigue usando Tailscale aunque estés en la misma red.
+# esa IP (100.x) queda guardada como local, y Moonlight seguiría por Tailscale aunque estés en la misma red.
+# Los fps y el bitrate se fijan aquí en cada arranque: lo que cambies en los ajustes de Moonlight se pisa.
 LAN=192.168.20.25
 C="$HOME/.config/Moonlight Game Streaming Project/Moonlight.conf"
-# Solo con Moonlight cerrado (al salir reescribe su config) y si Sunshine responde en la red local
-if ! pgrep -x moonlight | grep -qvx $$ && timeout 2 bash -c "</dev/tcp/$LAN/47989" 2>/dev/null; then
-    sed -i "s/\\\\localaddress=100\\..*/\\\\localaddress=$LAN/" "$C"
+# Solo con Moonlight cerrado: al salir reescribe su config
+if ! pgrep -x moonlight | grep -qvx $$; then
+    if timeout 2 bash -c "</dev/tcp/$LAN/47989" 2>/dev/null; then
+        fps=60 kbps=20000
+        sed -i "s/\\\\localaddress=100\\..*/\\\\localaddress=$LAN/" "$C"
+    else
+        fps=30 kbps=3000
+    fi
+    sed -i -e "s/^fps=.*/fps=$fps/" -e "s/^bitrate=.*/bitrate=$kbps/" "$C"
 fi
 exec /usr/bin/moonlight "$@"
