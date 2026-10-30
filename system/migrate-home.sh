@@ -2,7 +2,7 @@
 # migrate-home.sh : Fase 4 del plan. ~ pasa del HDD al NVMe (menos workbench/02_GameDev) y el HDD se monta en ~/HDD.
 # Copia sin borrar nada del HDD. Tres pasos:
 #   1) sudo migrate-home.sh copia      con tu sesión abierta: la copia lenta
-#   2) migrate-home.sh final           como root en una TTY, sin tu sesión gráfica: el delta, fstab y reinicio
+#   2) migrate-home.sh final           reinicia y, en la pantalla de login SIN entrar, Ctrl+Alt+F3 como root
 #   3) sudo migrate-home.sh ordenar    tras reiniciar: ~/HDD queda con GameDev, Respaldo y home-anterior
 set -uo pipefail
 shopt -s dotglob nullglob
@@ -39,12 +39,13 @@ copia)
     echo "== A copiar: $((total / 2**30)) GiB · libre en el NVMe: $((libre / 2**30)) GiB"
     [ "$total" -lt $((libre - 40 * 2**30)) ] || { echo "No cabe dejando 40 GiB libres: no copio."; exit 1; }
     copiar || [ $? = 24 ] || { echo "rsync falló"; exit 1; }   # 24: archivos que desaparecieron mientras copiaba
-    echo "== Copia lista. Ahora cierra sesión, entra como root en una TTY (Ctrl+Alt+F3) y corre: $0 final"
+    echo "== Copia lista. Reinicia y, en la pantalla de login SIN entrar, Ctrl+Alt+F3 como root: $0 final"
     ;;
 final)
     [ -z "${SUDO_USER:-}" ] || { echo "este paso va como root en una TTY (Ctrl+Alt+F3, usuario root), no con sudo"; exit 1; }
     if pgrep -u "$U" >/dev/null; then
-        echo "Todavía hay procesos de $U (¿la sesión gráfica sigue abierta?). Cierra sesión, espera 10 s y repite:"
+        echo "Todavía hay procesos de $U: tu sesión sigue abierta. Lo más simple: reinicia y, en la pantalla de"
+        echo "login sin entrar, Ctrl+Alt+F3 como root y repite este comando. Procesos:"
         pgrep -u "$U" -l; echo "(si no se van solos: loginctl terminate-user $U)"; exit 1
     fi
     cd /
