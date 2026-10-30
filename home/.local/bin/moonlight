@@ -1,0 +1,11 @@
+#!/bin/bash
+# moonlight : en casa conecta a nitrocachy por la red local; fuera, por Tailscale (su dirección manual).
+# Sunshine le devuelve a Moonlight como "local" la IP por la que entró. Tras una sesión por Tailscale
+# esa IP (100.x) queda guardada como local, y Moonlight sigue usando Tailscale aunque estés en la misma red.
+LAN=192.168.20.25
+C="$HOME/.config/Moonlight Game Streaming Project/Moonlight.conf"
+# Solo con Moonlight cerrado (al salir reescribe su config) y si Sunshine responde en la red local
+if ! pgrep -x moonlight | grep -qvx $$ && timeout 2 bash -c "</dev/tcp/$LAN/47989" 2>/dev/null; then
+    sed -i "s/\\\\localaddress=100\\..*/\\\\localaddress=$LAN/" "$C"
+fi
+exec /usr/bin/moonlight "$@"
