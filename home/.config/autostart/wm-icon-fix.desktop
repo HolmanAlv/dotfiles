@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=WM Icon Fix
+Comment=Pone su icono a ventanas que no traen uno (Alt+Tab y panel)
+Exec=wm-icon-fix
+X-XFCE-Autostart-Override=true

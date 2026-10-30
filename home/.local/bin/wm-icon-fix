@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+# Ventanas sin _NET_WM_ICON (Flutter, etc.) salen con xfwm4-default en Alt+Tab
+# y en el panel. Les pone el icono de su .desktop resuelto con el tema actual
+# (Zafiro -> heredados -> hicolor).
+import subprocess, re, ctypes, gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, Gio
+
+SIZE = 48
+
+def sh(*a):
+    return subprocess.run(a, capture_output=True, text=True).stdout
+
+x11 = ctypes.CDLL("libX11.so.6")
+x11.XOpenDisplay.restype = ctypes.c_void_p
+x11.XInternAtom.restype = ctypes.c_ulong
+x11.XInternAtom.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int]
+x11.XChangeProperty.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ctypes.c_ulong, ctypes.c_ulong,
+                                ctypes.c_int, ctypes.c_int, ctypes.c_void_p, ctypes.c_int]
+x11.XFlush.argtypes = [ctypes.c_void_p]
+dpy = x11.XOpenDisplay(None)
+NET_WM_ICON = x11.XInternAtom(dpy, b"_NET_WM_ICON", 0)
+CARDINAL = x11.XInternAtom(dpy, b"CARDINAL", 0)
+
+theme = Gtk.IconTheme.new()
+theme.set_custom_theme(sh("xfconf-query", "-c", "xsettings", "-p", "/Net/IconThemeName").strip())
+
+def icon_for(names):
+    low = {n.lower() for n in names}
+    for app in Gio.AppInfo.get_all():
+        wm = (app.get_startup_wm_class() or "").lower()
+        stem = (app.get_id() or "").lower().removesuffix(".desktop")
+        if (wm in low or stem in low) and app.get_icon():
+            return app.get_icon().to_string()
+    return names[0] if names else None
+
+def fix(win):
+    if "Icon (" in sh("xprop", "-id", win, "_NET_WM_ICON")[:80]:
+        return
+    names = re.findall(r'"([^"]*)"', sh("xprop", "-id", win, "WM_CLASS"))
+    name = icon_for(names)
+    if not name:
+        return
+    try:
+        if name.startswith("/"):
+            from gi.repository import GdkPixbuf
+            pb = GdkPixbuf.Pixbuf.new_from_file_at_size(name, SIZE, SIZE)
+        else:
+            pb = theme.load_icon(name, SIZE, Gtk.IconLookupFlags.FORCE_SIZE)
+    except Exception:
+        return
+    if not pb.get_has_alpha():
+        pb = pb.add_alpha(False, 0, 0, 0)
+    w, h, stride, px = pb.get_width(), pb.get_height(), pb.get_rowstride(), pb.get_pixels()
+    vals = [w, h]
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = px[y * stride + x * 4: y * stride + x * 4 + 4]
+            vals.append(a << 24 | r << 16 | g << 8 | b)
+    # formato 32 en Xlib = array de long (64 bits)
+    arr = (ctypes.c_ulong * len(vals))(*vals)
+    x11.XChangeProperty(dpy, int(win, 16), NET_WM_ICON, CARDINAL, 32, 0, arr, len(vals))
+    x11.XFlush(dpy)
+
+seen = set()
+spy = subprocess.Popen(["xprop", "-root", "-spy", "_NET_CLIENT_LIST"], stdout=subprocess.PIPE, text=True)
+for line in spy.stdout:
+    wins = set(re.findall(r"0x[0-9a-f]+", line))
+    for win in wins - seen:
+        fix(win)
+    seen = wins

@@ -14,3 +14,5 @@ window > image { -gtk-icon-style: symbolic; }
 #actions-10 label { font-family: "JetBrainsMono NF"; font-size: 18px; }  /* misma altura visible que los iconos de 16px */
 /* indicador de micrófono grabando del plugin de volumen: monocromo como el resto (lo pinta en rojo) */
 .recording-indicator { color: inherit; }
+/* Alt+Tab de xfwm4: el texto bajo cada icono es la clase (org localsend...); el título real ya sale abajo */
+#xfwm-tabwin button label { color: transparent; }
