@@ -1,0 +1,12 @@
+# Espejo de ~ en ~/HDD/Respaldo (Timeshift no cubre ~). -x no entra en ~/HDD ni en otros montajes.
+# Si el HDD no está, el automontaje falla y rsync no escribe nada en el NVMe.
+[Unit]
+Description=Espejo de ~ en ~/HDD/Respaldo
+
+[Service]
+Type=oneshot
+Nice=19
+IOSchedulingClass=idle
+ExecStart=/usr/bin/rsync -aHAXx --delete --exclude=/.cache/ %h/ %h/HDD/Respaldo/
+# 24: archivos que desaparecieron mientras copiaba (navegador abierto, etc.)
+SuccessExitStatus=24
