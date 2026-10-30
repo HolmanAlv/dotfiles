@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=Blueman Applet
+# Bluetooth casi siempre apagado: sin applet al entrar (−67 MB). Se abre desde el menú: Administrador de Bluetooth
+Hidden=true
