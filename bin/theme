@@ -43,11 +43,19 @@ for f in gtk gtk-dark; do
         "$HOME/.themes/$GTK/gtk-4.0/$f.css" "$HOME/.config/gtk-3.0/gtk.css" > "$HOME/.config/gtk-4.0/$f.css"
 done
 
-# Fondos en todos los monitores: el escritorio N usa la N-ésima de WALLS
+# Fondos en todos los monitores: el escritorio N usa la N-ésima de WALLS. Además de los que ya existen,
+# crea los de cada salida de xrandr (conectada o no): el nombre cambia con el driver (eDP1 → eDP-1)
 n=$(echo $WALLS | wc -w)
-xfconf-query -c xfce4-desktop -l | grep '/last-image$' | while read -r p; do
+{
+    xfconf-query -c xfce4-desktop -l | grep '/last-image$'
+    for m in $(xrandr | awk '/connected/ {print $1}'); do
+        for ws in $(seq 0 $(($(xfconf-query -c xfwm4 -p /general/workspace_count) - 1))); do
+            echo "/backdrop/screen0/monitor$m/workspace$ws/last-image"
+        done
+    done
+} | sort -u | while read -r p; do
     ws=${p##*/workspace}; ws=${ws%%/*}
-    xfconf-query -c xfce4-desktop -p "$p" -s "$T/walls/$(echo $WALLS | cut -d' ' -f$((ws % n + 1)))"
+    xfconf-query -c xfce4-desktop -p "$p" -n -t string -s "$T/walls/$(echo $WALLS | cut -d' ' -f$((ws % n + 1)))"
 done
 
 # Plank: un nombre distinto por tema para que dconf dispare el cambio
@@ -57,7 +65,8 @@ dconf write /net/launchpad/plank/docks/dock1/theme "'$name'"
 
 # Apps que reescriben su propia config: solo se cambia una línea
 f=$HOME/.config/btop/btop.conf
-[ -f "$f" ] && sed -i "s|^color_theme = .*|color_theme = \"/usr/share/btop/themes/$BTOP.theme\"|" "$f"
+t=$HOME/.config/btop/themes/$BTOP.theme; [ -f "$t" ] || t=/usr/share/btop/themes/$BTOP.theme
+[ -f "$f" ] && sed -i "s|^color_theme = .*|color_theme = \"$t\"|" "$f"
 f=$HOME/.config/Code/User/settings.json
 [ -f "$f" ] && sed -i "s|\"workbench.colorTheme\": *\"[^\"]*\"|\"workbench.colorTheme\": \"$VSCODE\"|" "$f"
 f=$HOME/.config/zed/settings.json
