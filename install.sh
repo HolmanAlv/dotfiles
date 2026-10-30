@@ -14,6 +14,7 @@ if [ "${1:-}" = --capture ]; then
     git ls-files home | while read -r f; do [ ! -f "$HOME/${f#home/}" ] || cp "$HOME/${f#home/}" "$f"; done
     git ls-files themes | while read -r f; do [ ! -f "$D/$f" ] || cp "$D/$f" "$f"; done
     cp "$HOME/.local/bin/theme" bin/theme
+    sed "s|$HOME|\$HOME|g" "$HOME/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml" > xfce/xfce4-keyboard-shortcuts.xml
     # /etc del paquete del sistema: lo que pacman ve cambiado (lo que solo lee root, como sudoers, no)
     pacman -Qkk inspdell-system 2>/dev/null | sed -n 's|^backup file: inspdell-system: /\(etc/[^ ]*\) .*|\1|p' |
         sort -u | while read -r f; do cp "/$f" "system/inspdell-system/$f" || true; done
@@ -79,10 +80,13 @@ if command -v spicetify >/dev/null; then
 fi
 command -v code >/dev/null && code --install-extension jdinhlife.gruvbox >/dev/null
 
-# 5. XFCE: atajos y panel solo en una instalación nueva (no pisa lo que ya hay)
+# 5. XFCE: panel y atajos en una instalación nueva (no pisa lo que ya hay; con sesión abierta, los atajos van en el paso 6).
+# El XML de atajos guarda $HOME literal (--capture lo pone) para que valga con otro usuario
 X=$HOME/.config/xfce4/xfconf/xfce-perchannel-xml
 mkdir -p "$X"
-cp -n "$R"/xfce/*.xml "$X/"
+cp -n "$R"/xfce/xfce4-panel.xml "$X/"
+[ -e "$X/xfce4-keyboard-shortcuts.xml" ] ||
+    sed "s|\$HOME|$HOME|g" "$R/xfce/xfce4-keyboard-shortcuts.xml" > "$X/xfce4-keyboard-shortcuts.xml"
 
 # 6. Ajustes fijos de XFCE (no cambian con el tema); solo si hay sesión XFCE
 if xfconf-query -c xsettings -l >/dev/null 2>&1; then
@@ -96,18 +100,20 @@ if xfconf-query -c xsettings -l >/dev/null 2>&1; then
     xq xsettings /Gtk/FontName "Roboto 10"
     xq xsettings /Gtk/MonospaceFontName "Iosevka Nerd Font 10"
     xq xfce4-notifyd /theme Square
-    xq xfce4-keyboard-shortcuts '/commands/custom/<Super>space' 'rofi -show drun'
-    xq xfce4-keyboard-shortcuts '/commands/custom/<Super>t' "$HOME/.local/bin/tiling"
-    for k in h j k l; do
-        xq xfce4-keyboard-shortcuts "/commands/custom/<Alt><Super>$k" "$HOME/.local/bin/tiling focus $k"
-        xq xfce4-keyboard-shortcuts "/commands/custom/<Shift><Alt><Super>$k" "$HOME/.local/bin/tiling move $k"
-    done
-    xq xfce4-keyboard-shortcuts '/commands/custom/<Alt><Super>Return' "$HOME/.local/bin/tiling swap"
-    # Super+Alt+flechas redimensionan en mosaico; Arriba maximizaba en xfwm4 y ahora lo hace tiling fuera del mosaico
-    xfconf-query -c xfce4-keyboard-shortcuts -p '/xfwm4/custom/<Alt><Super>Up' -r 2>/dev/null || true
-    for k in Left Right Up Down; do
-        xq xfce4-keyboard-shortcuts "/commands/custom/<Alt><Super>$k" "$HOME/.local/bin/tiling resize $(echo $k | tr A-Z a-z)"
-    done
+    # Atajos (comandos y xfwm4): los personalizados pasan a ser exactamente los de xfce/xfce4-keyboard-shortcuts.xml.
+    # En vivo por xfconf: copiar el XML con la sesión abierta no sirve, xfconfd lo pisa al salir
+    for t in /commands/custom /xfwm4/custom; do xfconf-query -c xfce4-keyboard-shortcuts -p $t -r -R 2>/dev/null || true; done
+    python3 - "$R/xfce/xfce4-keyboard-shortcuts.xml" <<'PY'
+import os, subprocess, sys, xml.etree.ElementTree as ET
+def walk(node, path):
+    for p in node.findall("property"):
+        q = f"{path}/{p.get('name')}"
+        if "/custom/" in q and p.get("type") in ("string", "bool"):
+            v = p.get("value").replace("$HOME", os.environ["HOME"])
+            subprocess.run(["xfconf-query", "-c", "xfce4-keyboard-shortcuts", "-p", q, "-n", "-t", p.get("type"), "-s", v], check=True)
+        walk(p, q)
+walk(ET.parse(sys.argv[1]).getroot(), "")
+PY
     s=/screensavers/xfce-personal-slideshow
     xq xfce4-screensaver $s/location "$HOME/.config/theme/walls"
     xq xfce4-screensaver $s/background-color "#000000"
