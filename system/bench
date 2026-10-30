@@ -1,0 +1,50 @@
+#!/bin/sh
+# bench [etiqueta] : foto de solo lectura del sistema → ~/inspdell-logs/bench-<etiqueta>.txt
+# Es el "check" del plan de optimización: se corre al cerrar cada fase y se compara con la anterior.
+set -u
+L=$HOME/inspdell-logs; mkdir -p "$L"
+out=$L/bench-${1:-$(date +%F-%H%M)}.txt
+big=$(ls -SL /usr/lib/lib*.so* | head -1)   # archivo grande del NVMe para medir el disco sin caché
+
+{
+echo "== $(date -Is) · $(uname -r)"; cat /proc/cmdline
+echo "== arranque"; systemd-analyze 2>&1 | head -1; systemd-analyze blame 2>/dev/null | head -5
+echo "== disco"; df -h / "$HOME" | awk '!s[$0]++'; findmnt -T "$HOME" -no SOURCE,TARGET
+echo "APST pm_qos: $(cat /sys/class/nvme/nvme0/power/pm_qos_latency_tolerance_us)"
+echo "== memoria"
+for f in /sys/module/zswap/parameters/enabled /sys/kernel/mm/transparent_hugepage/enabled \
+         /proc/sys/vm/swappiness /proc/sys/vm/min_free_kbytes /proc/sys/vm/watermark_scale_factor; do
+    echo "$f: $(cat "$f")"
+done
+swapon --show --noheadings; df -h /tmp | tail -1; journalctl --disk-usage
+echo "== cpu"; grep -m1 microcode /proc/cpuinfo; echo "tainted: $(cat /proc/sys/kernel/tainted)"
+for v in retbleed spectre_v2; do echo "$v: $(cat /sys/devices/system/cpu/vulnerabilities/$v)"; done
+echo "== micro (getppid y NVMe con O_DIRECT sobre $big)"
+python3 - "$big" <<'PY'
+import os, sys, time, mmap, random
+n = 1_000_000
+t = time.perf_counter_ns()
+for _ in range(n): os.getppid()
+print(f"getppid: {(time.perf_counter_ns() - t) / n:.0f} ns")
+fd = os.open(sys.argv[1], os.O_RDONLY | os.O_DIRECT); size = os.fstat(fd).st_size; buf = mmap.mmap(-1, 4096)
+def probe(idle, k):
+    out = []
+    for _ in range(k):
+        time.sleep(idle); off = random.randrange(0, size - 4096) & ~4095
+        t = time.perf_counter(); os.preadv(fd, [buf], off); out.append((time.perf_counter() - t) * 1000)
+    return " ".join(f"{x:.2f}" for x in out)
+print("NVMe tras 4 s de reposo (ms):", probe(4.0, 4))
+print("NVMe seguido (ms):           ", probe(0.05, 6))
+PY
+echo "== vídeo"; vainfo 2>&1 | grep -E 'Driver version|VAProfile(H264|HEVC|VP9)' | head -6
+echo "== red y timers"; ss -tulnH | awk '{print $1, $5}' | sort -u; systemctl list-timers --no-pager --no-legend | awk '{print $NF}'
+echo "== presión (PSI)"; for r in cpu memory io; do echo "$r: $(head -1 /proc/pressure/$r)"; done
+echo "== errores en este arranque"
+for p in 'page allocation failure' 'Write-error on swap' 'AER:' 'failed to post pci rx buf' 'failed to set APST'; do
+    echo "$p: $(journalctl -b -k -o cat | grep -c "$p")"
+done
+echo "wifi-watchdog reinicios: $(journalctl -b -t wifi-watchdog -o cat | grep -c reiniciando)"
+echo "== paquetes"; echo ".pacnew: $(find /etc -name '*.pacnew' 2>/dev/null | wc -l)"
+pacman -Q inspdell-system 2>/dev/null && pacman -Qkk inspdell-system 2>&1 | tail -1
+} > "$out" 2>&1
+cat "$out"
