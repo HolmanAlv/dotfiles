@@ -1,4 +1,5 @@
 configuration {
+    modes:        "drun";  /* sin run: no escanea el $PATH al abrir */
     show-icons:   true;
     display-drun: "";
 }
