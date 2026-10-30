@@ -1,5 +1,5 @@
 #!/bin/bash
-# CPU, RAM y WiFi para el genmon del panel. Solo builtins de bash: ningún proceso extra por tick.
+# CPU, RAM y WiFi para el genmon del panel. Solo builtins de bash por tick; nmcli solo cada 30 s o al cambiar el estado.
 f=${XDG_RUNTIME_DIR:-/tmp}/panel-stats   # contadores del tick anterior (CPU y bytes de red)
 
 read -r _ a b c idle io d e g _ < /proc/stat
@@ -9,8 +9,12 @@ while read -r k v _; do
     case $k in MemTotal:) mt=$v ;; MemAvailable:) ma=$v; break ;; esac
 done < /proc/meminfo
 
-{ read -r; read -r; read -r ifc _ link _; } < /proc/net/wireless
-ifc=${ifc%:} link=${link%.}
+for d in /sys/class/net/*/wireless; do [ -d "$d" ] && { ifc=${d%/wireless} ifc=${ifc##*/}; break; }; done
+for r in /sys/class/rfkill/*; do   # radio apagada = bloqueo por software (nmcli/tecla) o por hardware
+    read -r t < "$r/type"; [ "$t" = wlan ] && { read -r s < "$r/soft"; read -r h < "$r/hard"; ((s|h)) && off=1; }
+done
+[ -n "$ifc" ] && read -r op < "/sys/class/net/$ifc/operstate"   # up = asociado a una red
+while read -r name _ l _; do [ "${name%:}" = "$ifc" ] && link=${l%.}; done < /proc/net/wireless
 # sin ruta por defecto = sin internet (la línea de /proc/net/wireless sigue ahí aunque se caiga el WiFi)
 while read -r _ dst _; do [ "$dst" = 00000000 ] && { gw=1; break; }; done < /proc/net/route
 # split por ':' porque con contadores grandes el kernel pega el número al nombre ("wlp2s0:123456789")
@@ -21,6 +25,16 @@ done < /proc/net/dev
 now=${EPOCHREALTIME/[.,]/}
 read -r p_tot p_idle p_rx p_tx p_now 2>/dev/null < "$f"
 echo "$tot $idle ${rx:-0} ${tx:-0} $now" > "$f"
+
+# conectividad real (NM hace la comprobación HTTP) y nombre de la red; ssid al final porque puede llevar espacios
+if [ "$op" = up ]; then
+    read -r n_now n_key nm ssid 2>/dev/null < "$f-nm"
+    key=$op${gw:-0}
+    if [ "$key" != "$n_key" ] || ((now-n_now > 30000000)) || [ -n "$gw" -a "$nm" != full ]; then
+        nm=$(nmcli -t -g CONNECTIVITY general) ssid=$(nmcli -t -g GENERAL.CONNECTION dev show "$ifc")
+        echo "$now $key ${nm:-unknown} $ssid" > "$f-nm"
+    fi
+fi
 
 dt=$((tot-p_tot)) us=$((now-p_now))
 cpu=$((dt > 0 ? 100*(dt-(idle-p_idle))/dt : 0))
@@ -42,11 +56,20 @@ color cpu_c "$cpu"; color ram_c "$ram_pct"
 rate down "$down"; rate up "$up"
 
 I='<span size="xx-large">' E='</span>'   # glifos a altura de icono (16px), números a la del texto
-if [ -n "$gw" ]; then
-    printf -v net "$I\U000f05a9$E ↓%4s ↑%4s" "$down" "$up"
-    tip="WiFi $ifc · señal $((link*100/70))%"   # ath10k da la calidad sobre 70
+sig=$((${link:-0}*100/70))   # ath10k da la calidad sobre 70
+# los glifos de la Nerd Font miden ~900 y avanzan 600: al final de la etiqueta llevan un espacio o se cortan
+printf -v w "$I\U000f05a9$E"
+if [ -z "$ifc" ] || [ -n "$off" ]; then
+    printf -v net "$I\U000f05aa $E"; tip="WiFi apagado"
+elif [ "$op" != up ]; then
+    net="<span foreground=\"#e67e80\">$w</span>$I $E"; tip="WiFi encendido · sin conectar"
+elif [ -z "$gw" ]; then
+    net="<span foreground=\"#dbbc7f\">$w</span>$I $E"; tip="$ssid · sin internet (obteniendo IP…)"
+elif [ "$nm" != full ]; then
+    case $nm in portal) why="portal cautivo: inicia sesión" ;; limited) why="sin internet (red local sí)" ;; *) why="sin internet" ;; esac
+    printf -v net "<span foreground=\"#dbbc7f\">$w</span> ↓%4s ↑%4s" "$down" "$up"; tip="$ssid · $why · señal $sig%"
 else
-    printf -v net "<span foreground=\"#e67e80\">$I\U000f05aa$E</span>"; tip="Sin internet"
+    printf -v net "$w ↓%4s ↑%4s" "$down" "$up"; tip="$ssid · señal $sig%"
 fi
 printf "<txt><span%s>$I\U000f0ee0$E %3d%%</span>  <span%s>$I\U000f035b$E %s</span>  %s</txt><tool>CPU %d%%\nRAM %s / %s (%d%%)\n%s</tool>\n" \
     "$cpu_c" "$cpu" "$ram_c" "${ram}G" "$net" "$cpu" "$ram" "${tot_ram} GiB" "$ram_pct" "$tip"
