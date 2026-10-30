@@ -89,6 +89,7 @@ if [ "${2:-}" = --system ]; then
     # que es de los paquetes). Excepción: el cursor, porque libXcursor no busca en /usr/local.
     # Iconos: Adwaita (ya en el sistema; copiar los Colloid serían ~54MB para 5 iconos simbólicos casi iguales)
     S=/usr/local/share
+    sudo mkdir -p "$S/themes"
     sudo cp -rLT "$HOME/.themes/$GTK" "$S/themes/$GTK"
     sudo cp -rLT "$HOME/.local/share/icons/$CURSOR" "/usr/share/icons/$CURSOR"
     sudo install -Dm644 "$LOGIN_WALL" "$S/backgrounds/dotfiles-login.$ext"
