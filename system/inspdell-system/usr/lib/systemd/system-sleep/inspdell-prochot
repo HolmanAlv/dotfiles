@@ -1,0 +1,4 @@
+#!/bin/sh
+# Al despertar el firmware vuelve a activar BD PROCHOT: ver /usr/lib/inspdell/prochot
+[ "$1" = post ] || exit 0
+exec systemctl --no-block restart inspdell-prochot.service

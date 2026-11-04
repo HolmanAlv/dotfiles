@@ -1,0 +1,4 @@
+# Cargador "desconocido" → CPU a 400 MHz: ver /usr/lib/inspdell/prochot
+SUBSYSTEM=="power_supply", KERNEL=="AC", ACTION=="add|change", RUN+="/usr/bin/systemctl --no-block restart inspdell-prochot.service"
+# Al desenchufar, brillo como mucho al 30 % (0,7 W medidos de 7 en reposo); las teclas lo suben si hace falta
+SUBSYSTEM=="power_supply", KERNEL=="AC", ACTION=="change", ATTR{online}=="0", RUN+="/bin/sh -c 'f=/sys/class/backlight/intel_backlight/brightness; [ $$(cat $$f) -le 2250 ] || echo 2250 > $$f'"

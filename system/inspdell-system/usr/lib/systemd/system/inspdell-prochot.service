@@ -1,0 +1,7 @@
+# Lo arrancan udev y system-sleep sin esperar: la sonda tarda 5 s y udev no debe bloquearse
+[Unit]
+Description=BD PROCHOT según la fuente de energía y si Dell reconoce el cargador
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/inspdell/prochot

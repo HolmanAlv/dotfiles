@@ -1,0 +1,22 @@
+#!/bin/sh
+# Si el EC de Dell no lee el pin de identificación del cargador ("adaptador desconocido"), clava la CPU
+# en 400 MHz con PROCHOT externo. Con cargador se ignora esa señal (BD PROCHOT, bit 0 del MSR 0x1FC);
+# con batería se respeta: esta batería (12 %) no aguanta picos y el EC la usa para no apagarse en seco.
+# La protección térmica propia de la CPU (TjMax) sigue activa siempre.
+# Antes de ignorarlo se mira 5 s si el EC lo mete: así se sabe si reconoció el cargador. El resultado
+# (dell | generico) queda en /run/inspdell/cargador para el aviso de la sesión (charger-sound).
+# Lo lanza inspdell-prochot.service, que arrancan udev (arranque y cada cambio del AC) y system-sleep
+# (al despertar el firmware lo repone).
+modprobe msr
+v=$(rdmsr -c -p 0 0x1fc) || exit 1
+mkdir -p /run/inspdell
+if [ "$(cat /sys/class/power_supply/AC/online)" = 1 ]; then
+    wrmsr -a 0x1fc $((v | 1)); wrmsr -a 0x19c 0   # BD PROCHOT activo y logs térmicos limpios
+    sleep 5
+    # Bit 3 del 0x19C: log de PROCHOT externo. Con el cargador reconocido sigue en 0 (comprobado)
+    if [ "$(rdmsr -p 0 -f 3:3 0x19c)" = 1 ]; then echo generico; else echo dell; fi > /run/inspdell/cargador
+    wrmsr -a 0x1fc $((v & ~1))
+else
+    rm -f /run/inspdell/cargador
+    [ "$((v | 1))" = "$((v))" ] || wrmsr -a 0x1fc $((v | 1))
+fi

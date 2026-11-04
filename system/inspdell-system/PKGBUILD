@@ -1,12 +1,12 @@
 # Lo propio del Dell Inspiron 3481, encima de arch-base: WiFi QCA9377 y Ethernet RTL8106E, mitigación de CPU,
-# GRUB con Pond, TLP con los umbrales de esta batería y la pantalla 2K. Construir aquí con: makepkg -f
+# GRUB con Pond, TLP para esta batería, cargador "desconocido" (PROCHOT) y la pantalla 2K. Construir aquí con: makepkg -f
 pkgname=inspdell-system
-pkgver=2
-pkgrel=1
+pkgver=3
+pkgrel=2
 pkgdesc='Ajustes del Dell Inspiron 3481 (hardware), encima de arch-base'
 arch=(any)
 license=(MIT)
-depends=('arch-base>=1' intel-ucode intel-media-driver tlp)
+depends=('arch-base>=1' intel-ucode intel-media-driver tlp msr-tools)
 backup=(etc/default/grub.d/91-inspdell.cfg
         etc/lightdm/lightdm.conf.d/91-inspdell.conf
         etc/tlp.d/90-inspdell.conf)

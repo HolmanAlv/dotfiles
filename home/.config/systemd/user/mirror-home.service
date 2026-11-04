@@ -4,6 +4,8 @@
 Description=Espejo de ~ en ~/HDD/Respaldo
 # Sin el HDD (u otro PC) se salta: rsync crearía ~/HDD/Respaldo dentro de ~ y se copiaría a sí mismo
 ConditionPathIsDirectory=%h/HDD/Respaldo
+# Con batería no despierta el HDD (y la batería está al 12 %): se salta hasta el día siguiente
+ConditionACPower=true
 
 [Service]
 Type=oneshot
