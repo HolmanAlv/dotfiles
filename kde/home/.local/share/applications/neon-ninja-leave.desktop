@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Leave
+Comment=Plasma's own screen to log out, restart or shut down
+Exec=qdbus6 org.kde.LogoutPrompt /LogoutPrompt org.kde.LogoutPrompt.promptAll
+Icon=neonninjapower
+NoDisplay=true

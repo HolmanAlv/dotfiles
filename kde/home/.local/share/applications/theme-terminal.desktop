@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Terminal
+Comment=The terminal of the active global theme
+Exec=sh -c "exec \\$(kreadconfig6 --file kdeglobals --group General --key TerminalApplication)"
+Icon=utilities-terminal
+NoDisplay=true

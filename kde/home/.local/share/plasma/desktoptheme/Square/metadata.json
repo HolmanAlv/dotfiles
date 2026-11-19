@@ -1,0 +1,16 @@
+{
+  "KPlugin": {
+    "Authors": [
+      {
+        "Name": "Holman Alvarado"
+      }
+    ],
+    "Category": "Plasma Theme",
+    "Id": "Square",
+    "License": "MIT",
+    "Name": "Square",
+    "Description": "Straight corners, the color scheme's colors, no blur",
+    "Version": "1"
+  },
+  "X-Plasma-API": "5.0"
+}

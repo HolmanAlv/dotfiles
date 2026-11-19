@@ -1,0 +1,11 @@
+{
+    "KPackageStructure": "KSysguard/SensorFace",
+    "KPlugin": {
+        "Description": "Stock horizontal bars with a label and a value, square and small",
+        "Icon": "office-chart-bar",
+        "Id": "org.holman.neonbars",
+        "License": "LGPL-2.0-or-later",
+        "Name": "Neon Bars",
+        "Version": "1"
+    }
+}

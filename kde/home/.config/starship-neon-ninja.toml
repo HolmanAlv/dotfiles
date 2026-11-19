@@ -1,0 +1,58 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# Neon Ninja: the repo's powerlevel10k layout. Arrow segments, a dotted fill, status and time on the right.
+# Only the Neon Ninja kitty reads this; ~/.config/starship.toml stays for every other terminal.
+add_newline = true
+
+format = """
+[ 忍 ](bg:#ff2e4d fg:#050507 bold)[](fg:#ff2e4d bg:#16161d)$directory[](fg:#16161d bg:#22222b)$git_branch$git_status[](fg:#22222b)$fill$status$cmd_duration$jobs$time
+$character"""
+
+[line_break]
+disabled = true
+
+[fill]
+symbol = "·"
+style = "#2a2a35"
+
+[directory]
+format = "[ $path ]($style)[$read_only]($read_only_style)"
+style = "bg:#16161d fg:#d5d6e0 bold"
+read_only = " 󰌾"
+read_only_style = "bg:#16161d fg:#ff2e4d"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[git_branch]
+format = "[ $symbol$branch ]($style)"
+symbol = " "
+style = "bg:#22222b fg:#bb9af7"
+
+[git_status]
+format = '([$all_status$ahead_behind ]($style))'
+style = "bg:#22222b fg:#ff2e4d"
+
+[status]
+disabled = false
+format = "[ ✘ $status ]($style)"
+style = "fg:#ff2e4d"
+
+[cmd_duration]
+min_time = 2000
+format = "[ $duration ]($style)"
+style = "fg:#e0af68"
+
+[jobs]
+format = "[ $symbol$number ]($style)"
+symbol = "✦"
+style = "fg:#7aa2f7"
+
+[time]
+disabled = false
+format = "[ $time ]($style)"
+time_format = "%H:%M:%S"
+style = "fg:#6b6d7c"
+
+[character]
+success_symbol = "[❯](#ff2e4d)"
+error_symbol = "[❯](bold #ff6b6b)"

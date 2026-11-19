@@ -1,0 +1,23 @@
+// Neon Ninja. Runs only by hand; the image needs a terminal that shows pictures, like kitty.
+{
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    "logo": {
+        "type": "kitty-direct",
+        "source": "~/.config/fastfetch/ninja.png",
+        "width": 26,
+        "height": 13,
+        "padding": { "top": 1, "left": 2, "right": 3 }
+    },
+    "display": {
+        "separator": "  ",
+        "color": { "keys": "red", "title": "red" },
+        "key": { "width": 10 }
+    },
+    "modules": [
+        "title", "separator", "os", "kernel", "uptime", "packages", "shell",
+        { "type": "wm", "key": "WM" },
+        "terminal", "cpu", "gpu", "memory",
+        { "type": "disk", "key": "Disk", "folders": "/" },
+        "break", "colors"
+    ]
+}

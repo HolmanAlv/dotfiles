@@ -1,0 +1,13 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Category": "Date and Time",
+        "Description": "Date and time in one line of pixel font, at its native size. The stock clock fits its font to the panel, which blurs it.",
+        "Icon": "preferences-system-time",
+        "Id": "org.holman.neonclock",
+        "License": "MIT",
+        "Name": "Neon Clock",
+        "Version": "1"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

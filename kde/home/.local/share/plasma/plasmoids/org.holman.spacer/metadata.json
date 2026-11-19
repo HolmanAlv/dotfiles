@@ -1,0 +1,13 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Category": "Miscellaneous",
+        "Description": "Empty space that only stretches. Two of them center what is between them in the free room there, where the stock spacer centers on the whole panel.",
+        "Icon": "distribute-horizontal-x",
+        "Id": "org.holman.spacer",
+        "License": "MIT",
+        "Name": "Plain Spacer",
+        "Version": "1"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

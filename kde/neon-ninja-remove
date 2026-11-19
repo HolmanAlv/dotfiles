@@ -1,0 +1,59 @@
+#!/bin/sh
+# neon-ninja-remove            : undo everything install.sh did. Logs out; the files go back at the next login.
+# neon-ninja-remove --check    : list what differs from the saved desktop
+# neon-ninja-remove --packages : uninstall the packages added for this (after the restore)
+# neon-ninja-remove --purge    : delete the saved desktop and this script (after the restore)
+#
+# KWin and plasmashell rewrite their config when they exit, so the restore runs from plasma-workspace/env,
+# before either of them starts. After a broken session: run it from a TTY (Ctrl+Alt+F3), then reboot.
+set -eu
+D=$HOME/.local/share/neon-ninja
+B=$D/backup
+HOOK=$HOME/.config/plasma-workspace/env/neon-ninja-restore.sh
+
+[ -f "$B/list" ] || { echo "neon-ninja-remove: nothing saved in $B" >&2; exit 1; }
+
+restore() {
+    cd "$HOME"
+    while IFS= read -r f; do
+        rm -rf -- "./$f"
+        rmdir -p --ignore-fail-on-non-empty -- "$(dirname "./$f")" 2>/dev/null || true
+    done < "$B/list"
+    cp -a "$B/files/." "$HOME/"
+    rm -f "$HOOK"
+    # Spotify's files are patched, so going back to the restored theme takes a new patch
+    [ -z "${NO_SESSION:-}" ] && command -v spicetify >/dev/null && spicetify apply -q -n >/dev/null 2>&1 || true
+    touch "$B/restored"
+}
+
+check() {
+    cd "$HOME"
+    n=0
+    while IFS= read -r f; do
+        if grep -qxF -- "$f" "$B/absent"; then
+            [ ! -e "$f" ] || { echo "still here: $f"; n=$((n + 1)); }
+        else
+            diff -rq -- "$B/files/$f" "$f" || n=$((n + 1))
+        fi
+    done < "$B/list"
+    echo "$n difference(s) from the saved desktop"
+}
+
+case ${1:-} in
+    --restore-now) restore ;;
+    --check) check ;;
+    --packages)
+        [ -f "$B/restored" ] || { echo "neon-ninja-remove: run it after the restore; the desktop still uses them" >&2; exit 1; }
+        [ -s "$D/packages-added" ] || { echo "no packages were added"; exit 0; }
+        # shellcheck disable=SC2046
+        pkexec pacman -Rns $(cat "$D/packages-added") ;;
+    --purge)
+        [ -f "$B/restored" ] || { echo "neon-ninja-remove: run it after the restore" >&2; exit 1; }
+        rm -rf "$D" "$HOME/.local/bin/neon-ninja-remove" ;;
+    '')
+        mkdir -p "$(dirname "$HOOK")"
+        printf '"$HOME/.local/bin/neon-ninja-remove" --restore-now\n' > "$HOOK"
+        qdbus6 org.kde.Shutdown /Shutdown org.kde.Shutdown.logout 2>/dev/null ||
+            echo "log out or reboot to finish" ;;
+    *) sed -n '2,5p' "$0" >&2; exit 1 ;;
+esac

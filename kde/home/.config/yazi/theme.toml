@@ -1,0 +1,41 @@
+# Neon Ninja: red on near black, no rounded separators
+[mgr]
+cwd             = { fg = "#ff2e4d" }
+find_keyword    = { fg = "#ff2e4d", bold = true }
+find_position   = { fg = "#bb9af7", bold = true }
+marker_copied   = { fg = "#9ece6a", bg = "#9ece6a" }
+marker_cut      = { fg = "#ff2e4d", bg = "#ff2e4d" }
+marker_marked   = { fg = "#7aa2f7", bg = "#7aa2f7" }
+marker_selected = { fg = "#e0af68", bg = "#e0af68" }
+count_copied    = { fg = "#050507", bg = "#9ece6a" }
+count_cut       = { fg = "#050507", bg = "#ff2e4d" }
+count_selected  = { fg = "#050507", bg = "#e0af68" }
+border_symbol   = "│"
+border_style    = { fg = "#2a2a35" }
+
+[indicator]
+parent  = { fg = "#d5d6e0", bg = "#16161d" }
+current = { fg = "#ffffff", bg = "#c8203c" }
+preview = { fg = "#d5d6e0", bg = "#16161d" }
+padding = { open = "█", close = "█" }
+
+[mode]
+normal_main = { fg = "#050507", bg = "#ff2e4d", bold = true }
+normal_alt  = { fg = "#ff2e4d", bg = "#16161d" }
+select_main = { fg = "#050507", bg = "#e0af68", bold = true }
+select_alt  = { fg = "#e0af68", bg = "#16161d" }
+unset_main  = { fg = "#050507", bg = "#bb9af7", bold = true }
+unset_alt   = { fg = "#bb9af7", bg = "#16161d" }
+
+[status]
+sep_left  = { open = "", close = "" }
+sep_right = { open = "", close = "" }
+
+[filetype]
+rules = [
+    { mime = "image/*", fg = "#bb9af7" },
+    { mime = "{audio,video}/*", fg = "#e0af68" },
+    { mime = "application/{zip,gzip,x-tar,x-bzip2,x-7z-compressed,x-rar,x-xz,zstd}", fg = "#ff5c74" },
+    { url = "*/", fg = "#ff2e4d", bold = true },
+    { url = "*", fg = "#d5d6e0" },
+]

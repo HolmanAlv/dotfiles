@@ -1,0 +1,5 @@
+
+/* neon-ninja: everything square, from the repo's gtk.css. neon-ninja-remove takes it out with the rest of the file. */
+* { border-radius: 0; }
+check { border-radius: 0; }
+radio, switch, switch slider, scale slider, .circular, avatar { border-radius: 9999px; }

@@ -1,5 +1,21 @@
 # dotfiles
 
+![Arch](https://img.shields.io/badge/Arch-XFCE%20X11-1793d1?style=flat-square&logo=archlinux&logoColor=white)
+![CachyOS](https://img.shields.io/badge/CachyOS-Plasma%206%20Wayland-00ccaa?style=flat-square&logo=kde&logoColor=white)
+![Python](https://img.shields.io/badge/Python-theme%20generators-3776ab?style=flat-square&logo=python&logoColor=white)
+![Shell](https://img.shields.io/badge/Shell-installers-4eaa25?style=flat-square&logo=gnubash&logoColor=white)
+
+Two desktops with the same idea, square, minimal and keyboard-driven, each with its own installer and a golden-spiral tiling written from scratch:
+
+| Desktop | Where | Machine |
+|---|---|---|
+| **XFCE** (X11), Everforest/Gruvbox, live theme switching | this page, `home/`, `themes/`, `system/` | Dell Inspiron 3481 (Arch) |
+| **Neon Ninja** (KDE Plasma 6, Wayland), black and neon red, as a Plasma global theme | [`kde/`](kde/README.md) | Acer Nitro (CachyOS) |
+
+Highlights: a tiling manager as a Python + Wnck daemon on XFCE and as a KWin script on Plasma; a generated Plasma style, fonts with corrected line metrics, a custom clock and sensor widgets; and a reversible install (`neon-ninja-remove --check`, a test that installs and restores in a throwaway HOME).
+
+## XFCE
+
 Arch + XFCE (X11) con Everforest Dark Hard, bordes cuadrados y temas intercambiables.
 
 ![Escritorio](screenshots/desktop.png)

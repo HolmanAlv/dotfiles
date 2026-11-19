@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40"><style type="text/css" id="current-color-scheme">.ColorScheme-Background{color:#0b0b10;}.ColorScheme-Text{color:#d5d6e0;}.ColorScheme-Highlight{color:#ff2e4d;}.ColorScheme-ViewBackground{color:#0b0b10;}.ColorScheme-ButtonBackground{color:#1e1e27;}</style>
+<g id="topleft"><rect x="0" y="0" width="4" height="4" class="ColorScheme-Background" style="fill:currentColor;fill-opacity:1"/><rect x="0" y="0" width="4" height="1" class="ColorScheme-Text" style="fill:currentColor;fill-opacity:0.1"/><rect x="0" y="0" width="1" height="4" class="ColorScheme-Text" style="fill:currentColor;fill-opacity:0.1"/></g>
+<g id="top"><rect x="6" y="0" width="4" height="4" class="ColorScheme-Background" style="fill:currentColor;fill-opacity:1"/><rect x="6" y="0" width="4" height="1" class="ColorScheme-Text" style="fill:currentColor;fill-opacity:0.1"/></g>
+<g id="topright"><rect x="12" y="0" width="4" height="4" class="ColorScheme-Background" style="fill:currentColor;fill-opacity:1"/><rect x="12" y="0" width="4" height="1" class="ColorScheme-Text" style="fill:currentColor;fill-opacity:0.1"/><rect x="15" y="0" width="1" height="4" class="ColorScheme-Text" style="fill:currentColor;fill-opacity:0.1"/></g>
+<g id="left"><rect x="0" y="6" width="4" height="4" class="ColorScheme-Background" style="fill:currentColor;fill-opacity:1"/><rect x="0" y="6" width="1" height="4" class="ColorScheme-Text" style="fill:currentColor;fill-opacity:0.1"/></g>
+<g id="center"><rect x="6" y="6" width="4" height="4" class="ColorScheme-Background" style="fill:currentColor;fill-opacity:1"/></g>
+<g id="right"><rect x="12" y="6" width="4" height="4" class="ColorScheme-Background" style="fill:currentColor;fill-opacity:1"/><rect x="15" y="6" width="1" height="4" class="ColorScheme-Text" style="fill:currentColor;fill-opacity:0.1"/></g>
+<g id="bottomleft"><rect x="0" y="12" width="4" height="4" class="ColorScheme-Background" style="fill:currentColor;fill-opacity:1"/><rect x="0" y="15" width="4" height="1" class="ColorScheme-Text" style="fill:currentColor;fill-opacity:0.1"/><rect x="0" y="12" width="1" height="4" class="ColorScheme-Text" style="fill:currentColor;fill-opacity:0.1"/></g>
+<g id="bottom"><rect x="6" y="12" width="4" height="4" class="ColorScheme-Background" style="fill:currentColor;fill-opacity:1"/><rect x="6" y="15" width="4" height="1" class="ColorScheme-Text" style="fill:currentColor;fill-opacity:0.1"/></g>
+<g id="bottomright"><rect x="12" y="12" width="4" height="4" class="ColorScheme-Background" style="fill:currentColor;fill-opacity:1"/><rect x="12" y="15" width="4" height="1" class="ColorScheme-Text" style="fill:currentColor;fill-opacity:0.1"/><rect x="15" y="12" width="1" height="4" class="ColorScheme-Text" style="fill:currentColor;fill-opacity:0.1"/></g>
+<rect id="hint-top-margin" x="18" y="0" width="1" height="30" fill="none"/>
+<rect id="hint-bottom-margin" x="18" y="0" width="1" height="30" fill="none"/>
+<rect id="hint-left-margin" x="18" y="0" width="2" height="1" fill="none"/>
+<rect id="hint-right-margin" x="18" y="0" width="2" height="1" fill="none"/>
+<g id="thick-topleft"><rect x="0" y="20" width="4" height="4" class="ColorScheme-Background" style="fill:currentColor;fill-opacity:0"/></g>
+<g id="thick-top"><rect x="6" y="20" width="4" height="4" class="ColorScheme-Background" style="fill:currentColor;fill-opacity:0"/></g>
+<g id="thick-topright"><rect x="12" y="20" width="4" height="4" class="ColorScheme-Background" style="fill:currentColor;fill-opacity:0"/></g>
+<g id="thick-left"><rect x="0" y="26" width="4" height="4" class="ColorScheme-Background" style="fill:currentColor;fill-opacity:0"/></g>
+<g id="thick-center"><rect x="6" y="26" width="4" height="4" class="ColorScheme-Background" style="fill:currentColor;fill-opacity:0"/></g>
+<g id="thick-right"><rect x="12" y="26" width="4" height="4" class="ColorScheme-Background" style="fill:currentColor;fill-opacity:0"/></g>
+<g id="thick-bottomleft"><rect x="0" y="32" width="4" height="4" class="ColorScheme-Background" style="fill:currentColor;fill-opacity:0"/></g>
+<g id="thick-bottom"><rect x="6" y="32" width="4" height="4" class="ColorScheme-Background" style="fill:currentColor;fill-opacity:0"/></g>
+<g id="thick-bottomright"><rect x="12" y="32" width="4" height="4" class="ColorScheme-Background" style="fill:currentColor;fill-opacity:0"/></g>
+<rect id="thick-hint-top-margin" x="18" y="20" width="1" height="30" fill="none"/>
+<rect id="thick-hint-bottom-margin" x="18" y="20" width="1" height="30" fill="none"/>
+<rect id="thick-hint-left-margin" x="18" y="20" width="2" height="1" fill="none"/>
+<rect id="thick-hint-right-margin" x="18" y="20" width="2" height="1" fill="none"/>
+</svg>
